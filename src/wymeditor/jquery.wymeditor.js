@@ -347,6 +347,8 @@ jQuery.fn.wymeditor = function(options) {
 
     direction:  "ltr",
 
+    customCommands: [],
+
     boxHtml:   "<div class='wym_box'>"
               + "<div class='wym_area_top'>" 
               + WYMeditor.TOOLS
@@ -953,7 +955,15 @@ WYMeditor.editor.prototype.exec = function(cmd) {
     break;
     
     default:
-      this._exec(cmd);
+      var custom_run = false;
+      jQuery.each(this._options.customCommands, function() {
+        if(cmd == this.name) {
+          custom_run = true;
+          this.run.apply(this);
+          return false;
+        }
+      });
+      if(!custom_run) this._exec(cmd);
     break;
   }
 };
