@@ -1815,7 +1815,8 @@ WYMeditor.XhtmlValidator = {
       "style",
       "title",
       "accesskey",
-      "tabindex"
+      "tabindex",
+      "/^data-.*/"
       ]
     },
     "language":
@@ -2401,6 +2402,15 @@ WYMeditor.XhtmlValidator = {
           }else{
             valid_attributes[attribute] = value;
           }
+        } else {
+          jQuery.each(possible_attributes, function() {
+            if(this.match(/\/(.*)\//)) {
+              regex = new RegExp(this.match(/\/(.*)\//)[1]);
+              if(regex.test(attribute)) {
+                valid_attributes[attribute] = value;
+              }
+            }
+          });
         }
       }
     }
