@@ -778,18 +778,19 @@ WYMeditor.editor.prototype.init = function() {
       //construct tools list
       var aTools = eval(this._options.toolsItems);
       var sTools = "";
+      var _this = this;
 
-      for(var i = 0; i < aTools.length; i++) {
-        var oTool = aTools[i];
+      jQuery.each(aTools, function() {
+        var oTool = this;
         if(oTool.name && oTool.title)
-          var sTool = this._options.toolsItemHtml;
+          var sTool = _this._options.toolsItemHtml;
           sTool = h.replaceAll(sTool, WYMeditor.TOOL_NAME, oTool.name);
-          sTool = h.replaceAll(sTool, WYMeditor.TOOL_TITLE, this._options.stringDelimiterLeft
+          sTool = h.replaceAll(sTool, WYMeditor.TOOL_TITLE, _this._options.stringDelimiterLeft
             + oTool.title
-            + this._options.stringDelimiterRight);
+            + _this._options.stringDelimiterRight);
           sTool = h.replaceAll(sTool, WYMeditor.TOOL_CLASS, oTool.css);
           sTools += sTool;
-      }
+      });
 
       boxHtml = h.replaceAll(boxHtml, WYMeditor.TOOLS_ITEMS, sTools);
 
@@ -797,14 +798,14 @@ WYMeditor.editor.prototype.init = function() {
       var aClasses = eval(this._options.classesItems);
       var sClasses = "";
 
-      for(i = 0; i < aClasses.length; i++) {
-        var oClass = aClasses[i];
+      jQuery.each(aClasses, function() {
+        var oClass = this;
         if(oClass.name && oClass.title)
-          var sClass = this._options.classesItemHtml;
+          var sClass = _this._options.classesItemHtml;
           sClass = h.replaceAll(sClass, WYMeditor.CLASS_NAME, oClass.name);
           sClass = h.replaceAll(sClass, WYMeditor.CLASS_TITLE, oClass.title);
           sClasses += sClass;
-      }
+      });
 
       boxHtml = h.replaceAll(boxHtml, WYMeditor.CLASSES_ITEMS, sClasses);
       
