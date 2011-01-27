@@ -1250,7 +1250,7 @@ WYMeditor.editor.prototype.paste = function(str) {
         html = '',
         paragraphs,
         focusNode;
-
+    
     // Split string into paragraphs by two or more newlines
     paragraphs = str.split(new RegExp(this._newLine + '{2,}', 'g'));
 
@@ -1294,6 +1294,25 @@ WYMeditor.editor.prototype.insert = function(html) {
         node = range.createContextualFragment(html);
         range.deleteContents();
         range.insertNode(node);
+    } else {
+        // Fall back to the internal paste function if there's no selection
+        this.paste(html);
+    }
+};
+
+WYMeditor.editor.prototype.insert_next = function(html) {
+    // Do we have a selection?
+    var selection = this._iframe.contentWindow.getSelection(),
+        range,
+        node;
+    if (selection.focusNode !== null) {
+        // Overwrite selection with provided html
+        var $selection_node = $(selection.focusNode);
+        if($selection_node.is('body')) {
+          $selection_node.append(html);
+        } else {
+          $selection_node.closest('body > *').after(html);
+        }
     } else {
         // Fall back to the internal paste function if there's no selection
         this.paste(html);
