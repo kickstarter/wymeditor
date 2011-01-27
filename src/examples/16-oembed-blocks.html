@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<!--
+ * WYMeditor : what you see is What You Mean web-based editor
+ * Copyright (c) 2005 - 2009 Jean-Francois Hovinne, http://www.wymeditor.org/
+ * Dual licensed under the MIT (MIT-license.txt)
+ * and GPL (GPL-license.txt) licenses.
+ *
+ * For further information visit:
+ *        http://www.wymeditor.org/
+ *
+ * File Name:
+ *        16-oembed-blocks.html
+ *        WYMeditor integration example.
+ *        See the documentation for more info.
+ *
+ * File Authors:
+ *        Samuel Cole <samuelcole.name>
+-->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>WYMeditor</title>
+<!-- jQuery library is required, see http://jquery.com/ -->
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.js"></script>
+<!-- WYMeditor main JS file, minified version -->
+<script type="text/javascript" src="../wymeditor/jquery.wymeditor.js"></script>
+<script type="text/javascript" src="../wymeditor/jquery.wymeditor.mozilla.js"></script>
+
+<!-- Dependencies -->
+<script type="text/javascript" src="depends/modal_dialog.js"></script>
+<link rel="stylesheet" type="text/css" href="depends/modal_dialog.css" />
+<script type="text/javascript" src="depends/jquery.wymeditor.modal_dialog.js"></script>
+<script type="text/javascript" src="depends/jquery.oembed.js"></script>
+
+
+<script type="text/javascript">
+
+jQuery(function() {
+  var defaults = {
+    skin: 'compact',
+    logoHtml: '',
+    boxHtml: "<div class='wym_box'>" +
+                "<div class='wym_area_top'>" +
+                  WYMeditor.TOOLS +
+                "</div>" +
+                "<div class='wym_area_left'></div>" +
+                "<div class='wym_area_right'></div>" +
+                "<div class='wym_area_main'>" +
+                WYMeditor.HTML +
+                WYMeditor.IFRAME +
+                WYMeditor.STATUS +
+                "</div>" +
+                  "<div class='wym_area_bottom'>" +
+                "</div>" +
+              "</div>",
+    toolsItems: [
+      {'name': 'Bold', 'title': 'Strong', 'css': 'wym_tools_strong'}, 
+      {'name': 'Italic', 'title': 'Emphasis', 'css': 'wym_tools_emphasis'},
+      {'name': 'CreateLink', 'title': 'Link', 'css': 'wym_tools_link'},
+      {'name': 'AddEmbed', 'title': 'image', 'css': 'wym_image_link'}
+    ],
+    postInit: function(wym) {
+        wym.modal_dialog(wym);
+    },
+    updateSelector: 'form',
+    updateEvent: 'submit',
+    customCommands: [ { 'name': 'AddEmbed', 'run': function() {
+      var wym = this;
+      var md = this.dialog("Add Image", false, '<form class="add_image">'+
+          '<fieldset>' +
+            "<label>Url:</label>" +
+            '<input type="text" class="wym_text url" name="url"></input>' +
+          '</fieldset>' +
+          '<input type="submit" value="Submit"></input>' +
+        '</form>');
+      md.$elem.bind('submit', function(e) {
+        e.preventDefault();
+        var url = $(this).find('input.url').val();
+        md.$elem.oembed(url, {}, function(code, oembed) {
+          var html = '<div class="template youtube" data-href="' + url + '">' +
+            '<img src="' + oembed.thumbnail_url + '"/>'+
+          '</div>';
+          wym.insert_next(html);
+          md.close();
+        });
+      });
+    }}]
+  };
+  $('.wymeditor').wymeditor(defaults);
+});
+
+</script>
+
+</head>
+
+<body>
+<h1>WYMeditor integration example</h1>
+<p><a href="http://www.wymeditor.org/">WYMeditor</a> is a web-based XHTML WYSIWYM editor.</p>
+<form method="post" action="">
+<textarea class="wymeditor">&lt;p&gt;Hello, World!&lt;/p&gt;</textarea>
+<input type="submit" class="wymupdate" />
+</form>
+
+</body>
+
+</html>
