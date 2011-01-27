@@ -81,6 +81,7 @@ jQuery(function() {
             '<img src="' + oembed.thumbnail_url + '"/>'+
           '</div>';
           wym.insert_next(html);
+          wym.append_empty_p_if_last_block_is_uneditable();
           md.close();
         });
       });
