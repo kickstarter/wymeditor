@@ -54,7 +54,7 @@ WYMeditor.WymClassExplorer.prototype.initIframe = function(iframe) {
     var wym = this;
     
     this._doc.body.onfocus = function()
-      {wym._doc.designMode = "on"; wym._doc = iframe.contentWindow.document;};
+      {wym._doc.body.contentEditable = "true"; wym._doc = iframe.contentWindow.document;};
     this._doc.onbeforedeactivate = function() {wym.saveCaret();};
     this._doc.onkeyup = function() {
       wym.saveCaret();

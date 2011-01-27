@@ -241,9 +241,9 @@ WYMeditor.WymClassMozilla.prototype.keyup = function(evt) {
 };
 
 WYMeditor.WymClassMozilla.prototype.enableDesignMode = function() {
-    if(this._doc.designMode == "off") {
+    if(this._doc.body.contentEditable != "true") {
       try {
-        this._doc.designMode = "on";
+        this._doc.body.contentEditable = "true";
         this._doc.execCommand("styleWithCSS", '', false);
       } catch(e) { }
     }

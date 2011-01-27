@@ -40,7 +40,7 @@ WYMeditor.WymClassOpera.prototype.initIframe = function(iframe) {
     jQuery('html', this._doc).attr('dir', this._options.direction);
     
     //init designMode
-    this._doc.designMode = "on";
+    this._doc.body.contentEditable = "true";
 
     //init html value
     this.html(this._wym._html);
