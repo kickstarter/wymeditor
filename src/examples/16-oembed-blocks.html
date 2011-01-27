@@ -77,7 +77,7 @@ jQuery(function() {
         e.preventDefault();
         var url = $(this).find('input.url').val();
         md.$elem.oembed(url, {}, function(code, oembed) {
-          var html = '<div class="template youtube" data-href="' + url + '">' +
+          var html = '<div class="template youtube" contentEditable="false" data-href="' + url + '">' +
             '<img src="' + oembed.thumbnail_url + '"/>'+
           '</div>';
           wym.insert_next(html);
