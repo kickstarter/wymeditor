@@ -77,11 +77,13 @@ jQuery(function() {
         e.preventDefault();
         var url = $(this).find('input.url').val();
         md.$elem.oembed(url, {}, function(code, oembed) {
-          var html = '<div class="template oembed" contentEditable="false" data-href="' + url + '">' +
-            '<img src="' + oembed.thumbnail_url + '"/>'+
-          '</div>';
-          wym.insert_next(html);
-          wym.append_empty_p_if_last_block_is_uneditable();
+          if(oembed) {
+            var html = '<div class="template oembed" contentEditable="false" data-href="' + url + '">' +
+              '<img src="' + oembed.thumbnail_url + '"/>'+
+            '</div>';
+            wym.insert_next(html);
+            wym.append_empty_p_if_last_block_is_uneditable();
+          }
           md.close();
         });
       });
