@@ -29,6 +29,8 @@ WYMeditor.WymClassSafari.prototype.initIframe = function(iframe) {
     this._iframe = iframe;
     this._doc = iframe.contentDocument;
     
+    jQuery(this._element).trigger('wymeditor:iframe_loaded');
+    
     //add css rules from options
     
     var styles = this._doc.styleSheets[0];    

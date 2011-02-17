@@ -28,7 +28,7 @@
    Namespace: WYMeditor
    Global WYMeditor namespace.
 */
-if(!WYMeditor) var WYMeditor = {};
+if(!window.WYMeditor) window.WYMeditor = {};
 
 //Wrap the Firebug console in WYMeditor.console
 (function() {
@@ -43,7 +43,7 @@ if(!WYMeditor) var WYMeditor = {};
     } else WYMeditor.console = window.console;
 })();
 
-jQuery.extend(WYMeditor, {
+jQuery.extend(window.WYMeditor, {
 
 /*
     Constants: Global WYMeditor constants.
@@ -842,6 +842,7 @@ WYMeditor.editor.prototype.bindEvents = function() {
   var wym = this;
 
   //handle click event on tools buttons
+  jQuery(this._box).find(this._options.toolSelector).unbind('click');
   jQuery(this._box).find(this._options.toolSelector).click(function() {
     wym._iframe.contentWindow.focus(); //See #154
     wym.exec(jQuery(this).attr(WYMeditor.NAME));
@@ -860,6 +861,11 @@ WYMeditor.editor.prototype.bindEvents = function() {
   $html_val.keyup(function() { jQuery(wym._doc.body).html(jQuery(this).val());});
   $html_val.focus(function() { jQuery(this).toggleClass('hasfocus'); });
   $html_val.blur(function() { jQuery(this).toggleClass('hasfocus'); });
+
+  //if external js updates this._element, suck it into the box
+  this._element.bind('change', function() {
+    jQuery(wym._doc.body).html(jQuery(this).val());
+  });
 
   //handle click event on classes buttons
   jQuery(this._box).find(this._options.classSelector).click(function() {
@@ -917,7 +923,6 @@ WYMeditor.editor.prototype.xhtml = function() {
  * @description Executes a button command
  */
 WYMeditor.editor.prototype.exec = function(cmd) {
-
   //base function for execCommand
   //open a dialog or exec
   switch(cmd) {
@@ -1348,9 +1353,13 @@ WYMeditor.editor.prototype.addCssRules = function(doc, aCss) {
 /********** CONFIGURATION **********/
 
 WYMeditor.editor.prototype.computeBasePath = function() {
-  return jQuery(jQuery.grep(jQuery('script'), function(s){
-    return (s.src && s.src.match(/jquery\.wymeditor(\.pack|\.min|\.packed)?\.js(\?.*)?$/ ));
-  })).attr('src').replace(/jquery\.wymeditor(\.pack|\.min|\.packed)?\.js(\?.*)?$/, '');
+  try {
+    return jQuery(jQuery.grep(jQuery('script'), function(s){
+      return (s.src && s.src.match(/jquery\.wymeditor(\.pack|\.min|\.packed)?\.js(\?.*)?$/ ));
+    })).attr('src').replace(/jquery\.wymeditor(\.pack|\.min|\.packed)?\.js(\?.*)?$/, '');
+  } catch(e) {
+    return '';
+  }
 };
 
 WYMeditor.editor.prototype.computeWymPath = function() {
@@ -2982,14 +2991,13 @@ WYMeditor.Lexer.prototype._decodeSpecial = function(mode)
 */
 WYMeditor.Lexer.prototype._invokeParser = function(content, is_match)
 {
-
   if (content === '') {
     return true;
   }
   var current = this._mode.getCurrent();
   var handler = this._mode_handlers[current];
-  var result;
-  eval('result = this._parser.' + handler + '(content, is_match);');
+  var result = this._parser[handler](content, is_match);
+  //eval('result = this._parser.' + handler + '(content, is_match);');
   return result;
 };
 

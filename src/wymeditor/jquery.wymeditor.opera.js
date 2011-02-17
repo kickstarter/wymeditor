@@ -28,6 +28,8 @@ WYMeditor.WymClassOpera.prototype.initIframe = function(iframe) {
     this._iframe = iframe;
     this._doc = iframe.contentWindow.document;
     
+    jQuery(this._element).trigger('wymeditor:iframe_loaded');
+    
     //add css rules from options
     var styles = this._doc.styleSheets[0];    
     var aCss = eval(this._options.editorStyles);
