@@ -967,6 +967,7 @@ WYMeditor.editor.prototype.exec = function(cmd) {
       if(!custom_run) this._exec(cmd);
     break;
   }
+  this.update_selections();
 };
 
 /* @name container
@@ -1452,13 +1453,45 @@ WYMeditor.editor.prototype.listen = function() {
     //don't use jQuery.find() on the iframe body
     //because of MSIE + jQuery + expando issue (#JQ1143)
     //jQuery(this._doc.body).find("*").bind("mouseup", this.mouseup);
+    var _this = this;
 
     jQuery(this._doc.body).bind("mousedown", this.mousedown);
+    jQuery(this._doc.body).bind("mouseup keyup change", function(e) {
+      _this.update_selections.apply(_this, [ e ]);
+    });
 };
 
 WYMeditor.editor.prototype.mousedown = function(evt) {
     var wym = WYMeditor.INSTANCES[this.ownerDocument.title];
     wym._selected_image = (evt.target.tagName.toLowerCase() == WYMeditor.IMG) ? evt.target : null;
+};
+
+WYMeditor.editor.prototype.update_selections = function(evt) {
+    var wym = this;
+    var focused = wym.selected();
+    var $focused = $(focused);
+    wym._box.find('.wym_tools ul > li').removeClass('selected').removeClass('partially_selected');
+
+    if($focused.is('b')) {
+      wym._box.find('.wym_tools_strong').addClass('selected');
+    } else if($focused.is('i')) {
+      wym._box.find('.wym_tools_emphasis').addClass('selected');
+    } else if($focused.is('a')) {
+      wym._box.find('.wym_tools_link, .wym_tools_unlink').addClass('selected');
+    }
+
+    jQuery.each(['b', 'i', 'a'], function() {
+      var matches = wym.selected_contains(this);
+      if(matches.length) {
+        if(this == 'b') {
+          wym._box.find('.wym_tools_strong').addClass('partially_selected');
+        } else if(this == 'i') {
+          wym._box.find('.wym_tools_emphasis').addClass('partially_selected');
+        } else if(this == 'a') {
+          wym._box.find('.wym_tools_link, .wym_tools_unlink').addClass('partially_selected');
+        }
+      }
+    });
 };
 
 /********** SKINS **********/
