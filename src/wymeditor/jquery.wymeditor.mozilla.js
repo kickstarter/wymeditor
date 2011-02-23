@@ -240,21 +240,22 @@ WYMeditor.WymClassMozilla.prototype.keyup = function(evt) {
       name == "sup" ||
       name == "a" ) name = container.parentNode.tagName.toLowerCase();
 
+    // prevent the up arrow on the first node from creating a new P
+    if(evt.keyCode == 38 && name == WYMeditor.BODY ) { //UP arrow
+      var $first_p = jQuery(wym._doc.body).find('p:first');
+      if($first_p.length) {
+        var sel = wym._iframe.contentWindow.getSelection();
+        var p_range = wym._iframe.contentWindow.document.createRange();
+        p_range.setStart($first_p[0], 0);
+        p_range.setEnd($first_p[0], 0);
+        sel.removeAllRanges();
+        sel.addRange(p_range);
+        return;
+      }
+    }
+    
     if(name == WYMeditor.BODY) wym._exec(WYMeditor.FORMAT_BLOCK, WYMeditor.P);
   }
-};
-
-//click handler
-WYMeditor.WymClassMozilla.prototype.click = function(evt) {
-
-	var wym = WYMeditor.INSTANCES[this.title];
-	var container = wym.selected();
-
-	if(container && container.tagName.toLowerCase() == WYMeditor.TR) {
-		jQuery(WYMeditor.TD, wym._doc.body).append('<br />');
-	} else if (container && container.tagName.toLowerCase() == WYMeditor.BODY) {
-		wym._exec(WYMeditor.FORMAT_BLOCK, WYMeditor.P);
-	}
 };
 
 WYMeditor.WymClassMozilla.prototype.enableDesignMode = function() {
