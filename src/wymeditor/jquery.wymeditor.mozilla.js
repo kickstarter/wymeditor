@@ -152,19 +152,6 @@ WYMeditor.WymClassMozilla.prototype._exec = function(cmd,param) {
     return(true);
 };
 
-/* @name selected
- * @description Returns the selected container
- */
-WYMeditor.WymClassMozilla.prototype.selected = function() {
-
-    var sel = this._iframe.contentWindow.getSelection();
-    var node = sel.focusNode;
-    if(node) {
-        if(node.nodeName == "#text") return(node.parentNode);
-        else return(node);
-    } else return(null);
-};
-
 WYMeditor.WymClassMozilla.prototype.addCssRule = function(styles, oCss) {
 
     styles.insertRule(oCss.name + " {" + oCss.css + "}",

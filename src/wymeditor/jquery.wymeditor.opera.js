@@ -73,16 +73,6 @@ WYMeditor.WymClassOpera.prototype._exec = function(cmd,param) {
 
 };
 
-WYMeditor.WymClassOpera.prototype.selected = function() {
-
-    var sel=this._iframe.contentWindow.getSelection();
-    var node=sel.focusNode;
-    if(node) {
-        if(node.nodeName=="#text")return(node.parentNode);
-        else return(node);
-    } else return(null);
-};
-
 WYMeditor.WymClassOpera.prototype.addCssRule = function(styles, oCss) {
 
     styles.insertRule(oCss.name + " {" + oCss.css + "}",

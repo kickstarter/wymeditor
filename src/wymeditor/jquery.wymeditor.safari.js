@@ -126,19 +126,6 @@ WYMeditor.WymClassSafari.prototype._exec = function(cmd,param) {
 
 };
 
-/* @name selected
- * @description Returns the selected container
- */
-WYMeditor.WymClassSafari.prototype.selected = function() {
-
-    var sel = this._iframe.contentWindow.getSelection();
-    var node = sel.focusNode;
-    if(node) {
-        if(node.nodeName == "#text") return(node.parentNode);
-        else return(node);
-    } else return(null);
-};
-
 WYMeditor.WymClassSafari.prototype.addCssRule = function(styles, oCss) {
 
     styles.insertRule(oCss.name + " {" + oCss.css + "}",

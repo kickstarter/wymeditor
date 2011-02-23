@@ -679,9 +679,10 @@ jQuery.fn.wymeditor = function(options) {
 
   }, options);
 
-  return this.each(function() {
+  if(window.rangy && !rangy.initialized) rangy.init();
 
-    new WYMeditor.editor(jQuery(this),options);
+  return this.each(function() {
+    new WYMeditor.editor(jQuery(this), options);
   });
 };
 
@@ -1047,6 +1048,50 @@ WYMeditor.editor.prototype.container = function(sType) {
   return false;
 };
 
+/* @name selected
+ * @description Returns a rangy selection node
+ * (this might also be a good place to check for rangy, and fall back on native
+ * selections)
+ */
+WYMeditor.editor.prototype.selection = function() {
+  var iframe = this._iframe;
+  var win = iframe.contentDocument ? iframe.contentDocument.defaultView : iframe.contentWindow;
+  var sel = rangy.getSelection(win);
+
+  return(sel);
+};
+
+/* @name selected
+ * @description Returns the selected node
+ */
+WYMeditor.editor.prototype.selected = function() {
+  var sel = this.selection();
+  var node = sel.focusNode;
+
+  if(node) {
+      if(node.nodeName == "#text") return(node.parentNode);
+      else return(node);
+  } else return(null);
+};
+
+/* @name selected_contains
+ * @description Returns an array of nodes that match a jQuery selector.
+ */
+WYMeditor.editor.prototype.selected_contains = function(selector) {
+  var sel = this.selection();
+  var matches = [];
+  
+  $.each(sel.getAllRanges(), function() {
+    $.each(this.getNodes(), function() {
+      if($(this).is(selector)) {
+        matches.push(this);
+      }
+    });
+  });
+
+  return(matches);
+};
+
 /* @name toggleClass
  * @description Toggles class on selected element, or one of its parents
  */
@@ -1298,12 +1343,12 @@ WYMeditor.editor.prototype.insert = function(html) {
 
 WYMeditor.editor.prototype.insert_next = function(html) {
     // Do we have a selection?
-    var selection = this._iframe.contentWindow.getSelection(),
+    var selection = this.selected(),
         range,
         node;
-    if (selection.focusNode !== null) {
+    if (selection !== null) {
         // Overwrite selection with provided html
-        var $selection_node = $(selection.focusNode);
+        var $selection_node = $(selection);
         if($selection_node.is('body')) {
           $selection_node.append(html);
         } else {
