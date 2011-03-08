@@ -679,9 +679,10 @@ jQuery.fn.wymeditor = function(options) {
 
   }, options);
 
-  return this.each(function() {
+  if(window.rangy && !rangy.initialized) rangy.init();
 
-    new WYMeditor.editor(jQuery(this),options);
+  return this.each(function() {
+    new WYMeditor.editor(jQuery(this), options);
   });
 };
 
@@ -952,6 +953,22 @@ WYMeditor.editor.prototype.exec = function(cmd) {
     case WYMeditor.PREVIEW:
       this.dialog(WYMeditor.PREVIEW, this._options.dialogFeaturesPreview);
     break;
+    
+    case WYMeditor.UNLINK:
+      var collapsed = true;
+
+      if(this.selection && this.selection_collapsed()) {
+        var $selected_a = this.selected_parents_contains('a');
+        if($selected_a.length) {
+          $selected_a.each(function() {
+            //inspired by jquery unwrap
+            jQuery( this ).replaceWith( this.childNodes );
+          });
+          break;
+        }
+      }
+      this._exec(cmd);
+    break;
 
     default:
       var custom_run = false;
@@ -966,6 +983,7 @@ WYMeditor.editor.prototype.exec = function(cmd) {
       if(!custom_run) this._exec(cmd);
     break;
   }
+  if(cmd != WYMeditor.TOGGLE_HTML) this.update_selections();
 };
 
 /* @name container
@@ -1045,6 +1063,74 @@ WYMeditor.editor.prototype.container = function(sType) {
   }
   else return(this.selected());
   return false;
+};
+
+/* @name selected
+ * @description Returns a rangy selection node
+ * (this might also be a good place to check for rangy, and fall back on native
+ * selections)
+ */
+WYMeditor.editor.prototype.selection = function() {
+  var iframe = this._iframe;
+  var win = (iframe.contentDocument && iframe.contentDocument.defaultView) ?
+    iframe.contentDocument.defaultView : iframe.contentWindow;
+  var sel = rangy.getSelection(win);
+
+  return(sel);
+};
+
+WYMeditor.editor.prototype.selection_collapsed = function() {
+  var sel = this.selection();
+  var collapsed = false;
+  
+  $.each(sel.getAllRanges(), function() {
+    if(this.collapsed) {
+      collapsed = true;
+      //break
+      return false;
+    }
+  });
+
+  return(collapsed);
+};
+
+/* @name selected
+ * @description Returns the selected node
+ */
+WYMeditor.editor.prototype.selected = function() {
+  var sel = this.selection();
+  var node = sel.focusNode;
+
+  if(node) {
+      if(node.nodeName == "#text") return(node.parentNode);
+      else return(node);
+  } else return(null);
+};
+
+/* @name selected_contains
+ * @description Returns an array of nodes that match a jQuery selector.
+ */
+WYMeditor.editor.prototype.selected_contains = function(selector) {
+  var sel = this.selection();
+  var matches = [];
+  
+  $.each(sel.getAllRanges(), function() {
+    $.each(this.getNodes(), function() {
+      if($(this).is(selector)) {
+        matches.push(this);
+      }
+    });
+  });
+
+  return(matches);
+};
+
+WYMeditor.editor.prototype.selected_parents_contains = function(selector) {
+  var $matches = $([]);
+  var $selected = $(this.selected());
+  if($selected.is(selector)) $matches = $matches.add($selected);
+  $matches = $matches.add($selected.parents(selector));
+  return($matches);
 };
 
 /* @name toggleClass
@@ -1227,7 +1313,22 @@ WYMeditor.editor.prototype.dialog = function( dialogType, dialogFeatures, bodyHt
  * @description Shows/Hides the HTML
  */
 WYMeditor.editor.prototype.toggleHtml = function() {
-  jQuery(this._box).find(this._options.htmlSelector).toggle();
+  var $html_box = jQuery(this._box).find(this._options.htmlSelector);
+  var $iframe_box = jQuery(this._box).find('.wym_iframe');
+  var $button = this._box.find('.wym_tools_html');
+  if(!$html_box.is(':visible')) {
+    $html_box.show();
+    $html_box.find('textarea').height($iframe_box.height() - 10);
+    $button.addClass('selected');
+    $iframe_box.css('visibility', 'hidden');
+    $(this._box).find('.ui-resizable-handle').hide();
+  } else {
+    $html_box.hide();
+    $button.removeClass('selected');
+    $(this._box).find('.ui-resizable-handle').show();
+    $iframe_box.css('visibility', 'visible');
+    jQuery(this._doc).focus();
+  }
 };
 
 WYMeditor.editor.prototype.uniqueStamp = function() {
@@ -1298,12 +1399,12 @@ WYMeditor.editor.prototype.insert = function(html) {
 
 WYMeditor.editor.prototype.insert_next = function(html) {
     // Do we have a selection?
-    var selection = this._iframe.contentWindow.getSelection(),
+    var selection = this.selected(),
         range,
         node;
-    if (selection.focusNode !== null) {
+    if (selection !== null) {
         // Overwrite selection with provided html
-        var $selection_node = $(selection.focusNode);
+        var $selection_node = $(selection);
         if($selection_node.is('body')) {
           $selection_node.append(html);
         } else {
@@ -1407,13 +1508,55 @@ WYMeditor.editor.prototype.listen = function() {
     //don't use jQuery.find() on the iframe body
     //because of MSIE + jQuery + expando issue (#JQ1143)
     //jQuery(this._doc.body).find("*").bind("mouseup", this.mouseup);
+    var _this = this;
 
     jQuery(this._doc.body).bind("mousedown", this.mousedown);
+    jQuery(this._doc.body).bind("mouseup keyup change", function(e) {
+      _this.update_selections.apply(_this, [ e ]);
+    });
 };
 
 WYMeditor.editor.prototype.mousedown = function(evt) {
     var wym = WYMeditor.INSTANCES[this.ownerDocument.title];
     wym._selected_image = (evt.target.tagName.toLowerCase() == WYMeditor.IMG) ? evt.target : null;
+};
+
+WYMeditor.editor.prototype.update_selections = function(evt) {
+    var wym = this;
+    wym._box.find('.wym_tools ul > li:not(.wym_tools_html)').removeClass('selected').removeClass('partially_selected');
+
+    if(this.selected_parents_contains('b').length) {
+      wym._box.find('.wym_tools_strong').addClass('selected');
+    }
+    if(this.selected_parents_contains('i').length) {
+      wym._box.find('.wym_tools_emphasis').addClass('selected');
+    }
+    if(this.selected_parents_contains('a').length) {
+      wym._box.find('.wym_tools_link, .wym_tools_unlink').addClass('selected');
+    }
+    if(this.selected_parents_contains('li').length) {
+      wym._box.find('.wym_tools_unordered_list').addClass('selected');
+    }
+    if(this.selected_parents_contains('h1').length) {
+      wym._box.find('.wym_tools_header').addClass('selected');
+    }
+
+    jQuery.each(['b', 'i', 'a', 'li', 'ul'], function() {
+      var matches = wym.selected_contains(this);
+      if(matches.length) {
+        if(this == 'b') {
+          wym._box.find('.wym_tools_strong').addClass('partially_selected');
+        } else if(this == 'i') {
+          wym._box.find('.wym_tools_emphasis').addClass('partially_selected');
+        } else if(this == 'a') {
+          wym._box.find('.wym_tools_link, .wym_tools_unlink').addClass('partially_selected');
+        } else if(this == 'li' || this == 'ul') {
+          wym._box.find('.wym_tools_unordered_list').addClass('partially_selected');
+        } else if(this == 'h1') {
+          wym._box.find('.wym_tools_header').addClass('partially_selected');
+        }
+      }
+    });
 };
 
 /********** SKINS **********/

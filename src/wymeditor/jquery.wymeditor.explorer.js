@@ -131,15 +131,6 @@ WYMeditor.WymClassExplorer.prototype._exec = function(cmd,param) {
 
 };
 
-WYMeditor.WymClassExplorer.prototype.selected = function() {
-
-    var caretPos = this._iframe.contentWindow.document.caretPos;
-        if(caretPos!==null) {
-            if(caretPos.parentElement!=undefined)
-              return(caretPos.parentElement());
-        }
-};
-
 WYMeditor.WymClassExplorer.prototype.saveCaret = function() {
 
     this._doc.caretPos = this._doc.selection.createRange();
