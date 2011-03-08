@@ -1125,6 +1125,14 @@ WYMeditor.editor.prototype.selected_contains = function(selector) {
   return(matches);
 };
 
+WYMeditor.editor.prototype.selected_parents_contains = function(selector) {
+  var $matches = $([]);
+  var $selected = $(this.selected());
+  if($selected.is(selector)) $matches = $matches.add($selected);
+  $matches = $matches.add($selected.parents(selector));
+  return($matches);
+};
+
 /* @name toggleClass
  * @description Toggles class on selected element, or one of its parents
  */
