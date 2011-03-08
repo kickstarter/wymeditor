@@ -227,6 +227,20 @@ WYMeditor.WymClassMozilla.prototype.keyup = function(evt) {
       name == "sup" ||
       name == "a" ) name = container.parentNode.tagName.toLowerCase();
 
+    // prevent the up arrow on the first node from creating a new P
+    if(evt.keyCode == 38 && name == WYMeditor.BODY ) { //UP arrow
+      var $first_p = jQuery(wym._doc.body).find('p:first');
+      if($first_p.length) {
+        var sel = wym._iframe.contentWindow.getSelection();
+        var p_range = wym._iframe.contentWindow.document.createRange();
+        p_range.setStart($first_p[0], 0);
+        p_range.setEnd($first_p[0], 0);
+        sel.removeAllRanges();
+        sel.addRange(p_range);
+        return;
+      }
+    }
+    
     if(name == WYMeditor.BODY) wym._exec(WYMeditor.FORMAT_BLOCK, WYMeditor.P);
   }
 };
