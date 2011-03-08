@@ -1508,19 +1508,25 @@ WYMeditor.editor.prototype.mousedown = function(evt) {
 
 WYMeditor.editor.prototype.update_selections = function(evt) {
     var wym = this;
-    var focused = wym.selected();
-    var $focused = $(focused);
-    wym._box.find('.wym_tools ul > li').removeClass('selected').removeClass('partially_selected');
+    wym._box.find('.wym_tools ul > li:not(.wym_tools_html)').removeClass('selected').removeClass('partially_selected');
 
-    if($focused.is('b')) {
+    if(this.selected_parents_contains('b').length) {
       wym._box.find('.wym_tools_strong').addClass('selected');
-    } else if($focused.is('i')) {
+    }
+    if(this.selected_parents_contains('i').length) {
       wym._box.find('.wym_tools_emphasis').addClass('selected');
-    } else if($focused.is('a')) {
+    }
+    if(this.selected_parents_contains('a').length) {
       wym._box.find('.wym_tools_link, .wym_tools_unlink').addClass('selected');
     }
+    if(this.selected_parents_contains('li').length) {
+      wym._box.find('.wym_tools_unordered_list').addClass('selected');
+    }
+    if(this.selected_parents_contains('h1').length) {
+      wym._box.find('.wym_tools_header').addClass('selected');
+    }
 
-    jQuery.each(['b', 'i', 'a'], function() {
+    jQuery.each(['b', 'i', 'a', 'li', 'ul'], function() {
       var matches = wym.selected_contains(this);
       if(matches.length) {
         if(this == 'b') {
