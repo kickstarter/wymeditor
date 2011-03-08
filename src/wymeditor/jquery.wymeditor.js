@@ -953,6 +953,22 @@ WYMeditor.editor.prototype.exec = function(cmd) {
     case WYMeditor.PREVIEW:
       this.dialog(WYMeditor.PREVIEW, this._options.dialogFeaturesPreview);
     break;
+    
+    case WYMeditor.UNLINK:
+      var collapsed = true;
+
+      if(this.selection && this.selection_collapsed()) {
+        var $selected_a = this.selected_parents_contains('a');
+        if($selected_a.length) {
+          $selected_a.each(function() {
+            //inspired by jquery unwrap
+            jQuery( this ).replaceWith( this.childNodes );
+          });
+          break;
+        }
+      }
+      this._exec(cmd);
+    break;
 
     default:
       var custom_run = false;
@@ -1056,10 +1072,26 @@ WYMeditor.editor.prototype.container = function(sType) {
  */
 WYMeditor.editor.prototype.selection = function() {
   var iframe = this._iframe;
-  var win = iframe.contentDocument ? iframe.contentDocument.defaultView : iframe.contentWindow;
+  var win = (iframe.contentDocument && iframe.contentDocument.defaultView) ?
+    iframe.contentDocument.defaultView : iframe.contentWindow;
   var sel = rangy.getSelection(win);
 
   return(sel);
+};
+
+WYMeditor.editor.prototype.selection_collapsed = function() {
+  var sel = this.selection();
+  var collapsed = false;
+  
+  $.each(sel.getAllRanges(), function() {
+    if(this.collapsed) {
+      collapsed = true;
+      //break
+      return false;
+    }
+  });
+
+  return(collapsed);
 };
 
 /* @name selected
