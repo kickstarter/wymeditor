@@ -1550,6 +1550,10 @@ WYMeditor.editor.prototype.update_selections = function(evt) {
           wym._box.find('.wym_tools_emphasis').addClass('partially_selected');
         } else if(this == 'a') {
           wym._box.find('.wym_tools_link, .wym_tools_unlink').addClass('partially_selected');
+        } else if(this == 'li' || this == 'ul') {
+          wym._box.find('.wym_tools_unordered_list').addClass('partially_selected');
+        } else if(this == 'h1') {
+          wym._box.find('.wym_tools_header').addClass('partially_selected');
         }
       }
     });
