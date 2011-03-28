@@ -2360,6 +2360,17 @@ WYMeditor.XhtmlValidator = {
       ]
     },
     "27":"noscript",
+    "embed":
+    {
+      "attributes":[
+        "allowfullscreen",
+        "allowscriptaccess",
+        "height",
+        "src",
+        "type",
+        "width"
+      ]
+    },
     "object":
     {
       "attributes":[
@@ -2413,6 +2424,16 @@ WYMeditor.XhtmlValidator = {
       "required":[
       "name"
       ]
+    },
+    "iframe":
+    {
+      "attributes":
+      {
+        "0":"frameborder",
+        "1":"height",
+        "2":"src",
+        "3":"width"
+      }
     },
     "30":"pre",
     "q":
@@ -3631,7 +3652,7 @@ WYMeditor.XhtmlSaxListener = function()
     "caption", "cite", "code", "col", "colgroup", "dd", "del", "div",
     "dfn", "dl", "dt", "em", "fieldset", "form", "head", "h1", "h2",
     "h3", "h4", "h5", "h6", "html", "i", "ins",
-    "kbd", "label", "legend", "li", "map", "noscript",
+    "kbd", "label", "legend", "li", "map", "noscript", "embed", "iframe",
     "object", "ol", "optgroup", "option", "p", "param", "pre", "q",
     "samp", "script", "select", "small", "span", "strong", "style",
     "sub", "sup", "table", "tbody", "td", "textarea", "tfoot", "th",
