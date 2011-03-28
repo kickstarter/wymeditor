@@ -65,9 +65,6 @@ WYMeditor.WymClassMozilla.prototype.initIframe = function(iframe) {
     //bind editor keyup events
     jQuery(this._doc).bind("keyup", this.keyup);
     
-    //bind editor click events
-    jQuery(this._doc).bind("click", this.click);
-
     //bind editor focus events (used to reset designmode - Gecko bug)
     jQuery(this._doc).bind("focus", function () { 
         // Fix scope
