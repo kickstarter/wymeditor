@@ -917,8 +917,13 @@ WYMeditor.editor.prototype.html = function(html) {
 /* @name xhtml
  * @description Cleans up the HTML
  */
-WYMeditor.editor.prototype.xhtml = function() {
-    return this.parser.parse(this.html());
+WYMeditor.editor.prototype.xhtml = function(update) {
+    var html = this.html();
+    if($.isFunction(this._options.before_sanitize)) {
+      returned_html = this._options.before_sanitize.apply(this, [ update ]);
+      if(returned_html) html = returned_html;
+    }
+    return this.parser.parse(html);
 };
 
 /* @name exec
@@ -1248,7 +1253,7 @@ WYMeditor.editor.prototype.update = function() {
     // Dirty fix to remove stray line breaks (#189)
     jQuery(this._doc.body).children(WYMeditor.BR).remove();
 
-    html = this.xhtml();
+    html = this.xhtml(true);
     jQuery(this._element).val(html);
     jQuery(this._box).find(this._options.htmlValSelector).not('.hasfocus').val(html); //#147
 };
