@@ -778,11 +778,10 @@ WYMeditor.editor.prototype.init = function() {
       jQuery.each(aTools, function() {
         var oTool = this;
         if(oTool.name && oTool.title)
-          var sTool = _this._options.toolsItemHtml;
+          var sTool = this._options.toolsItemHtml;
           sTool = h.replaceAll(sTool, WYMeditor.TOOL_NAME, oTool.name);
-          sTool = h.replaceAll(sTool, WYMeditor.TOOL_TITLE, _this._options.stringDelimiterLeft +
-            oTool.title +
-            _this._options.stringDelimiterRight);
+          sTool = h.replaceAll(sTool, WYMeditor.TOOL_TITLE, this._options.stringDelimiterLeft +
+            oTool.title + this._options.stringDelimiterRight);
           sTool = h.replaceAll(sTool, WYMeditor.TOOL_CLASS, oTool.css);
           sTools += sTool;
       });
@@ -793,14 +792,14 @@ WYMeditor.editor.prototype.init = function() {
       var aClasses = eval(this._options.classesItems);
       var sClasses = "";
 
-      jQuery.each(aClasses, function() {
-        var oClass = this;
+      for(i = 0; i < aClasses.length; i++) {
+        var oClass = aClasses[i];
         if(oClass.name && oClass.title)
           var sClass = _this._options.classesItemHtml;
           sClass = h.replaceAll(sClass, WYMeditor.CLASS_NAME, oClass.name);
           sClass = h.replaceAll(sClass, WYMeditor.CLASS_TITLE, oClass.title);
           sClasses += sClass;
-      });
+      }
 
       boxHtml = h.replaceAll(boxHtml, WYMeditor.CLASSES_ITEMS, sClasses);
 
@@ -1037,9 +1036,9 @@ WYMeditor.editor.prototype.container = function(sType) {
         if(sType.toLowerCase() == WYMeditor.BLOCKQUOTE) {
 
           var blockquote = this.findUp(this.container(), WYMeditor.BLOCKQUOTE);
-
+          
           if(blockquote === null) {
-
+          
             newNode = this._doc.createElement(sType);
             container.parentNode.insertBefore(newNode,container);
             newNode.appendChild(container);
@@ -1467,6 +1466,10 @@ WYMeditor.editor.prototype.computeBasePath = function() {
   } catch(e) {
     return '';
   }
+
+  return jQuery(jQuery.grep(jQuery('script'), function(s){
+    return (s.src && s.src.match(/jquery\.wymeditor(\.pack|\.min|\.packed)?\.js(\?.*)?$/ ));
+  })).attr('src').replace(/jquery\.wymeditor(\.pack|\.min|\.packed)?\.js(\?.*)?$/, '');
 };
 
 WYMeditor.editor.prototype.computeWymPath = function() {
@@ -1754,6 +1757,33 @@ WYMeditor.INIT_DIALOG = function(index) {
           // Mozilla Firefox seems to have problems with empty cells
           // when inline editing of tables is disabled.
           cell.innerHTML = '&nbsp;';
+        }
+      }
+    }
+
+    // TODO: It seems to me we should warn the user when zero columns and/or rows
+    //       were entered.
+    if (0 < rowCount && 0 < columnCount)
+    {
+      var table       = wym._doc.createElement(WYMeditor.TABLE),
+          caption     = table.createCaption(),
+          summaryText = jQuery(wym._options.summarySelector).val(),
+          container   = jQuery(wym.findUp(wym.container(), WYMeditor.MAIN_CONTAINERS)).get(0);
+
+      if ("" !== summaryText)
+      {
+        jQuery(table).attr('summary', summaryText);
+      }
+
+      caption.innerHTML = jQuery(wym._options.captionSelector).val();
+
+      for (var rowIndex = 0, row; rowIndex < rowCount; rowIndex++)
+      {
+        row = table.insertRow(rowIndex);
+
+        for (var cellIndex = 0, cell; cellIndex < columnCount; cellIndex++)
+        {
+          cell = row.insertCell(cellIndex);
         }
       }
 
@@ -3167,7 +3197,6 @@ WYMeditor.Lexer.prototype._invokeParser = function(content, is_match)
   var current = this._mode.getCurrent();
   var handler = this._mode_handlers[current];
   var result = this._parser[handler](content, is_match);
-  //eval('result = this._parser.' + handler + '(content, is_match);');
   return result;
 };
 
