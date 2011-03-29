@@ -679,8 +679,6 @@ jQuery.fn.wymeditor = function(options) {
 
   }, options);
 
-  if(window.rangy && !rangy.initialized) rangy.init();
-
   return this.each(function() {
     new WYMeditor.editor(jQuery(this), options);
   });
@@ -1069,73 +1067,6 @@ WYMeditor.editor.prototype.container = function(sType) {
   return false;
 };
 
-/* @name selected
- * @description Returns a rangy selection node
- * (this might also be a good place to check for rangy, and fall back on native
- * selections)
- */
-WYMeditor.editor.prototype.selection = function() {
-  var iframe = this._iframe;
-  var win = (iframe.contentDocument && iframe.contentDocument.defaultView) ?
-    iframe.contentDocument.defaultView : iframe.contentWindow;
-  var sel = rangy.getSelection(win);
-
-  return(sel);
-};
-
-WYMeditor.editor.prototype.selection_collapsed = function() {
-  var sel = this.selection();
-  var collapsed = false;
-  
-  $.each(sel.getAllRanges(), function() {
-    if(this.collapsed) {
-      collapsed = true;
-      //break
-      return false;
-    }
-  });
-
-  return(collapsed);
-};
-
-/* @name selected
- * @description Returns the selected node
- */
-WYMeditor.editor.prototype.selected = function() {
-  var sel = this.selection();
-  var node = sel.focusNode;
-
-  if(node) {
-      if(node.nodeName == "#text") return(node.parentNode);
-      else return(node);
-  } else return(null);
-};
-
-/* @name selected_contains
- * @description Returns an array of nodes that match a jQuery selector.
- */
-WYMeditor.editor.prototype.selected_contains = function(selector) {
-  var sel = this.selection();
-  var matches = [];
-  
-  $.each(sel.getAllRanges(), function() {
-    $.each(this.getNodes(), function() {
-      if($(this).is(selector)) {
-        matches.push(this);
-      }
-    });
-  });
-
-  return(matches);
-};
-
-WYMeditor.editor.prototype.selected_parents_contains = function(selector) {
-  var $matches = $([]);
-  var $selected = $(this.selected());
-  if($selected.is(selector)) $matches = $matches.add($selected);
-  $matches = $matches.add($selected.parents(selector));
-  return($matches);
-};
 
 /* @name toggleClass
  * @description Toggles class on selected element, or one of its parents
