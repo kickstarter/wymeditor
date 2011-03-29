@@ -776,10 +776,10 @@ WYMeditor.editor.prototype.init = function() {
       jQuery.each(aTools, function() {
         var oTool = this;
         if(oTool.name && oTool.title)
-          var sTool = this._options.toolsItemHtml;
+          var sTool = _this._options.toolsItemHtml;
           sTool = h.replaceAll(sTool, WYMeditor.TOOL_NAME, oTool.name);
-          sTool = h.replaceAll(sTool, WYMeditor.TOOL_TITLE, this._options.stringDelimiterLeft +
-            oTool.title + this._options.stringDelimiterRight);
+          sTool = h.replaceAll(sTool, WYMeditor.TOOL_TITLE, _this._options.stringDelimiterLeft +
+            oTool.title + _this._options.stringDelimiterRight);
           sTool = h.replaceAll(sTool, WYMeditor.TOOL_CLASS, oTool.css);
           sTools += sTool;
       });
