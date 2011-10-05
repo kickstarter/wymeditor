@@ -1511,6 +1511,9 @@ WYMeditor.editor.prototype.update_selections = function(evt) {
     if(this.selected_parents_contains('h1').length) {
       wym._box.find('.wym_tools_header').addClass('selected');
     }
+    if(this.selected_parents_contains('blockquote').length) {
+      wym._box.find('.wym_tools_blockquote').addClass('selected');
+    }
 
     jQuery.each(['b', 'i', 'a', 'li', 'ul'], function() {
       var matches = wym.selected_contains(this);
@@ -1525,6 +1528,8 @@ WYMeditor.editor.prototype.update_selections = function(evt) {
           wym._box.find('.wym_tools_unordered_list').addClass('partially_selected');
         } else if(this == 'h1') {
           wym._box.find('.wym_tools_header').addClass('partially_selected');
+        } else if(this == 'blockquote') {
+          wym._box.find('.wym_tools_blockquote').addClass('partially_selected');
         }
       }
     });
