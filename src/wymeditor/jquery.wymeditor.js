@@ -28,7 +28,7 @@
    Namespace: WYMeditor
    Global WYMeditor namespace.
 */
-if(!window.WYMeditor) window.WYMeditor = {};
+if (!window.WYMeditor) { window.WYMeditor = {}; }
 
 //Wrap the Firebug console in WYMeditor.console
 (function() {
@@ -4058,5 +4058,6 @@ WYMeditor.Helper = {
         return(null);
     }
 };
+
 
 
