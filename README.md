@@ -17,14 +17,14 @@ WYMeditor is compatible with:
 Quick Start
 -----------
 
-Include the scripts:
+Download the latest release from [WYMeditor.org](http://www.wymeditor.org/download/) or build it yourself using `make` (recommended). Then include jQuery and the WYMeditor source:
 
     <script type="text/javascript" src="/jquery/jquery.js"></script>
     <script type="text/javascript" src="/wymeditor/jquery.wymeditor.min.js"></script>
 
-WYMeditor only works with jQuery 1.1.3.x or greater. 
+WYMeditor should work with jQuery 1.2.x and up, although using a later jQuery version is preferred. 
 
-Now, get you a textarea prepared:
+Now, prepare yourself a textarea:
 
     <textarea class="wymeditor"><p>Hello, World!</p></textarea>
     <input type="submit" class="wymupdate" />
@@ -34,7 +34,7 @@ Make sure to include the `wymupdate` class on your submit buttons.
 On ready:
 
     <script>
-      $(function() {
+      $(document).ready(function() {
         $('.wymeditor').wymeditor();
       });
     </script>
@@ -42,12 +42,22 @@ On ready:
 
 More examples can be [found here](https://github.com/wymeditor/wymeditor/tree/master/src/examples) or in your local examples directory.
 
-Contibuting
+Building WYMeditor
+------------------
+
+To build WYMeditor you need to have make and the [UglifyJS module](https://github.com/mishoo/UglifyJS/) for Node.js installed. To install UglifyJS using [NPM](http://npmjs.org/) runt the following:
+```npm install -g uglify-js```
+
+Running `make` in the terminal will build WYMeditor for distribution inside the dist catalog, which will be created if if does not already exist. 
+
+Running `make wymeditor` will only merge and minify the the WYMeditor source without packaging it for distribution.
+
+Contributing
 -----------
  - **Official branch:** https://github.com/wymeditor/wymeditor
  - **Issue tracking:** https://github.com/wymeditor/wymeditor/issues
  - **Wiki/Docs:** https://github.com/wymeditor/wymeditor/wiki
- - **Forum:** http://forum.wymeditor.org
+ - **Forum:** http://community.wymeditor.org
 
 [Read more on contributing](https://github.com/wymeditor/wymeditor/wiki/Contributing). 
 
