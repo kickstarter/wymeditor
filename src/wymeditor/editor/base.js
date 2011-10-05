@@ -29,9 +29,11 @@ WYMeditor.editor.prototype.init = function() {
         this._options.preInit(this);
     }
 
-    var SaxListener = new WYMeditor.XhtmlSaxListener();
-    jQuery.extend(SaxListener, WymClass);
-    this.parser = new WYMeditor.XhtmlParser(SaxListener);
+    if(!this._options.disable_sanitization) {
+      var SaxListener = new WYMeditor.XhtmlSaxListener();
+      jQuery.extend(SaxListener, WymClass);
+      this.parser = new WYMeditor.XhtmlParser(SaxListener);
+    }
 
     if (this._options.styles || this._options.stylesheet) {
         this.configureEditorUsingRawCss();
@@ -266,14 +268,17 @@ WYMeditor.editor.prototype.xhtml = function(update) {
 
     html = this.html();
 
-    if($.isFunction(this._options.before_sanitize)) {
-      returned_html = this._options.before_sanitize.apply(this, [ update ]);
-      if (returned_html) {
-        html = returned_html;
+    if (!this._options.disable_sanitization) {
+      if($.isFunction(this._options.before_sanitize)) {
+        returned_html = this._options.before_sanitize.apply(this, [ update ]);
+        if (returned_html) {
+          html = returned_html;
+        }
       }
-    }
-
-    return this.parser.parse(html));
+      return this.parser.parse(html));
+   } else {
+     return html;
+   }
 };
 
 /**
