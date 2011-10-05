@@ -991,7 +991,11 @@ WYMeditor.editor.prototype.exec = function(cmd) {
       if(!custom_run) this._exec(cmd);
     break;
   }
-  if(cmd != WYMeditor.TOGGLE_HTML) this.update_selections();
+
+  if(cmd != WYMeditor.TOGGLE_HTML) {
+    this.update_selections();
+    this._element.trigger('wymeditor:doc_html_updated', [this, $(this._doc.body).html()]);
+  }
 };
 
 /* @name container
