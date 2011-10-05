@@ -169,12 +169,15 @@ WYMeditor.WymClassMozilla.prototype.addCssRule = function(styles, oCss) {
 };
 
 
+var $last_focused_p = $([]);
 //keydown handler, mainly used for keyboard shortcuts
 WYMeditor.WymClassMozilla.prototype.keydown = function(evt) {
   
   //'this' is the doc
   var wym = WYMeditor.INSTANCES[this.title];
   var container = null;  
+  var $p = $(wym.selection().focusNode).closest('p');
+  if($p.length) $last_focused_p = $p;
 
   if(evt.ctrlKey){
     if(evt.keyCode == 66){
@@ -238,13 +241,21 @@ WYMeditor.WymClassMozilla.prototype.keyup = function(evt) {
       name == "a" ) name = container.parentNode.tagName.toLowerCase();
 
     // prevent the up arrow on the first node from creating a new P
-    if(evt.keyCode == 38 && name == WYMeditor.BODY ) { //UP arrow
-      var $first_p = jQuery(wym._doc.body).find('p:first');
-      if($first_p.length) {
+    if((evt.keyCode == 38 || evt.keyCode == 40) && name == WYMeditor.BODY ) { // UP/DOWN arrow
+      var focusNode = wym.selection().focusNode;
+      var up = evt.keyCode == 38;
+      if($last_focused_p.length) {
+        var $target_p = $([]);
+        if(up) {
+          $target_p = $last_focused_p.prevAll('p');
+        } else {
+          $target_p = $last_focused_p.nextAll('p');
+        }
+        if(!$target_p.length) $target_p = $last_focused_p;
         var sel = wym._iframe.contentWindow.getSelection();
         var p_range = wym._iframe.contentWindow.document.createRange();
-        p_range.setStart($first_p[0], 0);
-        p_range.setEnd($first_p[0], 0);
+        p_range.setStart($target_p[0], 0);
+        p_range.setEnd($target_p[0], 0);
         sel.removeAllRanges();
         sel.addRange(p_range);
         return;
@@ -291,4 +302,5 @@ WYMeditor.WymClassMozilla.prototype.getTagForStyle = function(style) {
   if(/super/.test(style)) return 'sup';
   return false;
 };
+
 
