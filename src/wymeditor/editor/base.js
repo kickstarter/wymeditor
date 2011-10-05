@@ -275,7 +275,7 @@ WYMeditor.editor.prototype.xhtml = function(update) {
           html = returned_html;
         }
       }
-      return this.parser.parse(html));
+      return this.parser.parse(html);
    } else {
      return html;
    }
@@ -1537,3 +1537,4 @@ WYMeditor.editor.prototype.loadSkin = function() {
         WYMeditor.SKINS[this._options.skin].init(this);
     }
 };
+
