@@ -681,6 +681,10 @@ WYMeditor.editor.prototype.status = function(sMessage) {
 WYMeditor.editor.prototype.update = function() {
     var html;
 
+    if (this._options.before_update) {
+      this._options.before_update.apply(this);
+    }
+
     // Dirty fix to remove stray line breaks (#189)
     jQuery(this._doc.body).children(WYMeditor.BR).remove();
 
