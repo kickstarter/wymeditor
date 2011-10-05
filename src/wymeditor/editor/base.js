@@ -1419,6 +1419,9 @@ WYMeditor.editor.prototype.listen = function() {
     // because of MSIE + jQuery + expando issue (#JQ1143)
 
     jQuery(this._doc.body).bind("mousedown", this.mousedown);
+    jQuery(this._doc.body).bind("mouseup keyup change", function(e) {
+      _this.update_selections.apply(_this, [ e ]);
+    });
 };
 
 WYMeditor.editor.prototype.mousedown = function(evt) {
@@ -1427,6 +1430,49 @@ WYMeditor.editor.prototype.mousedown = function(evt) {
     if (evt.target.tagName.toLowerCase() == WYMeditor.IMG) {
         this._selected_image = evt.target;
     }
+};
+
+WYMeditor.editor.prototype.update_selections = function(evt) {
+    var wym = this;
+    wym._box.find('.wym_tools ul > li:not(.wym_tools_html)').removeClass('selected').removeClass('partially_selected');
+
+    if(this.selected_parents_contains('b').length) {
+      wym._box.find('.wym_tools_strong').addClass('selected');
+    }
+    if(this.selected_parents_contains('i').length) {
+      wym._box.find('.wym_tools_emphasis').addClass('selected');
+    }
+    if(this.selected_parents_contains('a').length) {
+      wym._box.find('.wym_tools_link, .wym_tools_unlink').addClass('selected');
+    }
+    if(this.selected_parents_contains('li').length) {
+      wym._box.find('.wym_tools_unordered_list').addClass('selected');
+    }
+    if(this.selected_parents_contains('h1').length) {
+      wym._box.find('.wym_tools_header').addClass('selected');
+    }
+    if(this.selected_parents_contains('blockquote').length) {
+      wym._box.find('.wym_tools_blockquote').addClass('selected');
+    }
+
+    jQuery.each(['b', 'i', 'a', 'li', 'ul'], function() {
+      var matches = wym.selected_contains(this);
+      if(matches.length) {
+        if(this == 'b') {
+          wym._box.find('.wym_tools_strong').addClass('partially_selected');
+        } else if(this == 'i') {
+          wym._box.find('.wym_tools_emphasis').addClass('partially_selected');
+        } else if(this == 'a') {
+          wym._box.find('.wym_tools_link, .wym_tools_unlink').addClass('partially_selected');
+        } else if(this == 'li' || this == 'ul') {
+          wym._box.find('.wym_tools_unordered_list').addClass('partially_selected');
+        } else if(this == 'h1') {
+          wym._box.find('.wym_tools_header').addClass('partially_selected');
+        } else if(this == 'blockquote') {
+          wym._box.find('.wym_tools_blockquote').addClass('partially_selected');
+        }
+      }
+    });
 };
 
 /**
