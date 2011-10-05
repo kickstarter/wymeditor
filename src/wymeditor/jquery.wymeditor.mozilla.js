@@ -264,6 +264,8 @@ WYMeditor.WymClassMozilla.prototype.keyup = function(evt) {
     
     if(name == WYMeditor.BODY) wym._exec(WYMeditor.FORMAT_BLOCK, WYMeditor.P);
   }
+
+  $(wym._element).trigger('wymeditor:doc_html_updated', [wym, $(wym._doc.body).html()]);
 };
 
 WYMeditor.WymClassMozilla.prototype.enableDesignMode = function() {
@@ -302,5 +304,4 @@ WYMeditor.WymClassMozilla.prototype.getTagForStyle = function(style) {
   if(/super/.test(style)) return 'sup';
   return false;
 };
-
 
