@@ -1354,11 +1354,28 @@ WYMeditor.editor.prototype.insert_next = function(html) {
         node;
     if (selection !== null) {
         // Overwrite selection with provided html
-        var $selection_node = $(selection);
+        var $selection_node = $(selection),
+          $closest_blockquote = $selection_node.closest('blockquote');
         if($selection_node.is('body')) {
           $selection_node.append(html);
         } else {
-          $selection_node.closest('body > *').after(html);
+          // we have to look for blockquote's first, because blockquotes are
+          // comprised of Ps
+          if ($closest_blockquote.length) {
+            $closest_blockquote.after(html);
+          } else {
+            $selection_node.closest('div, p, h1, h2, h3, embed, cite').after(html);
+          }
+          
+          // Remove current selected block, if it's empty.
+          var $test = $selection_node.clone();
+          // Firefox likes to add weird empty BR tags.
+          // Rangy likes to add random spans
+          $test.find('br, span').remove();
+          if ($test.is(':empty')) {
+            $selection_node.remove();
+          }
+          $test.remove();
         }
     } else {
         // Fall back to the internal paste function if there's no selection
