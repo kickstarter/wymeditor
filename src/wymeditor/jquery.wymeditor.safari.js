@@ -212,6 +212,8 @@ WYMeditor.WymClassSafari.prototype.keyup = function(evt) {
       if(name == WYMeditor.BODY || name == WYMeditor.DIV) wym._exec(WYMeditor.FORMAT_BLOCK, WYMeditor.P); //fix #110 for DIV
     }
   }
+  
+  $(wym._element).trigger('wymeditor:doc_html_updated', [wym, $(wym._doc.body).html()]);
 };
 
 WYMeditor.WymClassSafari.prototype.openBlockTag = function(tag, attributes)
