@@ -108,4 +108,6 @@ WYMeditor.WymClassOpera.prototype.keyup = function(evt) {
   //'this' is the doc
   var wym = WYMeditor.INSTANCES[this.title];
   wym._selected_image = null;
+  $(wym._element).trigger('wymeditor:doc_html_updated', [wym, $(wym._doc.body).html()]);
 };
+
