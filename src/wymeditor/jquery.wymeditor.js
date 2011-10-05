@@ -1268,6 +1268,7 @@ WYMeditor.editor.prototype.toggleHtml = function() {
   if(!$html_box.is(':visible')) {
     $html_box.show();
     $html_box.find('textarea').height($iframe_box.height() - 10);
+    $html_box.find('textarea').width($iframe_box.width() - 10);
     $button.addClass('selected');
     $iframe_box.css('visibility', 'hidden');
     $(this._box).find('.ui-resizable-handle').hide();
