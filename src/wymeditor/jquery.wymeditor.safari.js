@@ -17,60 +17,65 @@
  *        Scott Lewis (lewiscot a-t gmail dotcom)
  */
 
-WYMeditor.WymClassSafari = function(wym) {
-
-    this._wym = wym;
-    this._class = "class";
-    this._newLine = "\n";
+WYMeditor.WymClassSafari = function (wym) {
+  this._wym = wym;
+  this._class = "class";
+  this._newLine = "\n";
 };
 
-WYMeditor.WymClassSafari.prototype.initIframe = function(iframe) {
+WYMeditor.WymClassSafari.prototype.initIframe = function (iframe) {
 
-    this._iframe = iframe;
-    this._doc = iframe.contentDocument;
-    
-    jQuery(this._element).trigger('wymeditor:iframe_loaded');
-    
-    //add css rules from options
-    
-    var styles = this._doc.styleSheets[0];    
-    var aCss = eval(this._options.editorStyles);
-    
-    this.addCssRules(this._doc, aCss);
+  this._iframe = iframe;
+  this._doc = iframe.contentDocument;
+  
+  jQuery(this._element).trigger('wymeditor:iframe_loaded');
+  
+  //add css rules from options
+  
+  var styles = this._doc.styleSheets[0],
+    aCss = eval(this._options.editorStyles);
+  
+  this.addCssRules(this._doc, aCss);
 
-    this._doc.title = this._wym._index;
+  this._doc.title = this._wym._index;
 
-    //set the text direction
-    jQuery('html', this._doc).attr('dir', this._options.direction);
+  //set the text direction
+  jQuery('html', this._doc).attr('dir', this._options.direction);
 
-    //init designMode
-    this._doc.body.contentEditable = "true";
-    
-    //init html value
-    this.html(this._wym._html);
-    
-    //pre-bind functions
-    if(jQuery.isFunction(this._options.preBind)) this._options.preBind(this);
-    
-    //bind external events
-    this._wym.bindEvents();
-    
-    //bind editor keydown events
-    jQuery(this._doc).bind("keydown", this.keydown);
-    
-    //bind editor keyup events
-    jQuery(this._doc).bind("keyup", this.keyup);
-    
-    //post-init functions
-    if(jQuery.isFunction(this._options.postInit)) this._options.postInit(this);
-    
-    //add event listeners to doc elements, e.g. images
-    this.listen();
+  //init designMode
+  this._doc.body.contentEditable = "true";
+  
+  //init html value
+  this.html(this._wym._html);
+  
+  //pre-bind functions
+  if (jQuery.isFunction(this._options.preBind)) {
+    this._options.preBind(this);
+  }
+  
+  //bind external events
+  this._wym.bindEvents();
+  
+  //bind editor keydown events
+  jQuery(this._doc).bind("keydown", this.keydown);
+  
+  //bind editor keyup events
+  jQuery(this._doc).bind("keyup", this.keyup);
+  
+  //post-init functions
+  if (jQuery.isFunction(this._options.postInit)) {
+    this._options.postInit(this);
+  }
+  
+  //add event listeners to doc elements, e.g. images
+  this.listen();
 };
 
-WYMeditor.WymClassSafari.prototype._exec = function(cmd,param) {
+WYMeditor.WymClassSafari.prototype._exec = function (cmd, param) {
 
-    if(!this.selected()) return(false);
+    if (!this.selected()) {
+      return(false);
+    }
     
     var focusNode = this.selected();    
 
@@ -188,22 +193,24 @@ WYMeditor.WymClassSafari.prototype.keyup = function(evt) {
     //text nodes replaced by P
     
     container = wym.selected();
-    var name = container.tagName.toLowerCase();
+    if (container) {
+      var name = container.tagName.toLowerCase();
 
-    //fix forbidden main containers
-    if(
-      name == "strong" ||
-      name == "b" ||
-      name == "em" ||
-      name == "i" ||
-      name == "sub" ||
-      name == "sup" ||
-      name == "a" ||
-      name == "span" /* fix #110 */ ) {
-        name = container.parentNode.tagName.toLowerCase();
+      //fix forbidden main containers
+      if(
+        name == "strong" ||
+        name == "b" ||
+        name == "em" ||
+        name == "i" ||
+        name == "sub" ||
+        name == "sup" ||
+        name == "a" ||
+        name == "span" /* fix #110 */ ) {
+          name = container.parentNode.tagName.toLowerCase();
+      }
+
+      if(name == WYMeditor.BODY || name == WYMeditor.DIV) wym._exec(WYMeditor.FORMAT_BLOCK, WYMeditor.P); //fix #110 for DIV
     }
-
-    if(name == WYMeditor.BODY || name == WYMeditor.DIV) wym._exec(WYMeditor.FORMAT_BLOCK, WYMeditor.P); //fix #110 for DIV
   }
 };
 
@@ -238,3 +245,4 @@ WYMeditor.WymClassSafari.prototype.getTagForStyle = function(style) {
   if(/super/.test(style)) return 'sup';
   return false;
 };
+
