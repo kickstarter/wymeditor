@@ -1013,6 +1013,13 @@ WYMeditor.editor.prototype.insert_next = function(html) {
     $(this._element).trigger('wymeditor:doc_html_updated', [this, $(this._doc.body).html()]);
 };
 
+WYMeditor.editor.prototype.append_empty_p_if_last_block_is_uneditable = function(html) {
+  var $last = $(this._doc).find('body > *:last');
+  if($last.attr('contenteditable') == 'false') {
+    $last.after('<p></p>');
+  }
+};
+
 WYMeditor.editor.prototype.wrap = function(left, right) {
     this.insert(
         left + this._iframe.contentWindow.getSelection().toString() + right);
