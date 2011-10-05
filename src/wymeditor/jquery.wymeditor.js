@@ -1489,8 +1489,7 @@ WYMeditor.editor.prototype.listen = function() {
 };
 
 WYMeditor.editor.prototype.mousedown = function(evt) {
-    var wym = WYMeditor.INSTANCES[this.ownerDocument.title];
-    wym._selected_image = (evt.target.tagName.toLowerCase() == WYMeditor.IMG) ? evt.target : null;
+    this._selected_image = (evt.target.tagName.toLowerCase() == WYMeditor.IMG) ? evt.target : null;
 };
 
 WYMeditor.editor.prototype.update_selections = function(evt) {
