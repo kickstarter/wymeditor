@@ -887,7 +887,23 @@ WYMeditor.editor.prototype.dialog = function(dialogType, dialogFeatures, bodyHtm
     Show/Hide the HTML textarea.
 */
 WYMeditor.editor.prototype.toggleHtml = function() {
-    jQuery(this._box).find(this._options.htmlSelector).toggle();
+    var $html_box = jQuery(this._box).find(this._options.htmlSelector),
+      $iframe_box = jQuery(this._box).find('.wym_iframe'),
+      $button = this._box.find('.wym_tools_html');
+    if(!$html_box.is(':visible')) {
+      $html_box.show();
+      $html_box.find('textarea').height($iframe_box.height() - 10);
+      $html_box.find('textarea').width($iframe_box.width() - 10);
+      $button.addClass('selected');
+      $iframe_box.css('visibility', 'hidden');
+      $(this._box).find('.ui-resizable-handle').hide();
+    } else {
+      $html_box.hide();
+      $button.removeClass('selected');
+      $(this._box).find('.ui-resizable-handle').show();
+      $iframe_box.css('visibility', 'visible');
+      jQuery(this._doc).focus();
+    }
 };
 
 WYMeditor.editor.prototype.uniqueStamp = function() {
