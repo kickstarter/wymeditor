@@ -4097,5 +4097,3 @@ WYMeditor.Helper = {
 };
 
 
-
-
