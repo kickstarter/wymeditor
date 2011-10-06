@@ -1,4 +1,4 @@
-/*jslint evil: true */
+/*jslint evil: true, indent: 4 */
 
 /**
     WYMeditor.editor.init
@@ -1545,4 +1545,5 @@ WYMeditor.editor.prototype.loadSkin = function() {
         WYMeditor.SKINS[this._options.skin].init(this);
     }
 };
+
 
