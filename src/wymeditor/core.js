@@ -986,7 +986,7 @@ WYMeditor.Helper = {
 
     //trim 'str' string
     trim: function (str) {
-        return str.replace(/^(\s*)|(\s*)$/gm, '');
+        return $.trim(str);
     },
 
     //return true if 'arr' array contains 'elem', or false
