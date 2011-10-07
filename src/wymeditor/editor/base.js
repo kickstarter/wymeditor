@@ -319,7 +319,7 @@ WYMeditor.editor.prototype.xhtml = function (update) {
     execCommand in some cases).
 */
 WYMeditor.editor.prototype.exec = function (cmd) {
-    var container, custom_run, _this = this;
+    var container, custom_run, _this = this, all_custom_commands;
     switch (cmd) {
 
     case WYMeditor.CREATE_LINK:
@@ -360,8 +360,9 @@ WYMeditor.editor.prototype.exec = function (cmd) {
 
 
     default:
-        custom_run = false;
-        jQuery.each(this._options.customCommands, function () {
+        $.merge([], this._options.customCommands);
+        $.merge(all_custom_commands, WYMeditor.CUSTOM_COMMANDS);
+        jQuery.each(all_custom_commands, function () {
             if (cmd === this.name) {
                 custom_run = true;
                 this.run.apply(_this);
