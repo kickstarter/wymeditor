@@ -360,7 +360,7 @@ WYMeditor.editor.prototype.exec = function (cmd) {
 
 
     default:
-        $.merge([], this._options.customCommands);
+        all_custom_commands = $.merge([], this._options.customCommands);
         $.merge(all_custom_commands, WYMeditor.CUSTOM_COMMANDS);
         jQuery.each(all_custom_commands, function () {
             if (cmd === this.name) {
