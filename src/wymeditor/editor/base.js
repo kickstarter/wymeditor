@@ -49,9 +49,9 @@ WYMeditor.editor.prototype.init = function () {
     }
 
     if (!this._options.disable_sanitization) {
-        SaxListener = new WYMeditor.XhtmlSaxListener();
-        jQuery.extend(SaxListener, WymClass);
-        this.parser = new WYMeditor.XhtmlParser(SaxListener);
+	    SaxListener = new WYMeditor.XhtmlSaxListener();
+	    jQuery.extend(SaxListener, WymClass);
+	    this.parser = new WYMeditor.XhtmlParser(SaxListener);
     }
 
     if (this._options.styles || this._options.stylesheet) {
@@ -2547,9 +2547,11 @@ WYMeditor.editor.prototype.listen = function () {
     // Don't use jQuery.find() on the iframe body
     // because of MSIE + jQuery + expando issue (#JQ1143)
 
-    jQuery(this._doc.body).bind("mousedown", this.mousedown);
     jQuery(this._doc.body).bind("mouseup keyup change", function (e) {
         _this.update_selections.apply(_this, [ e ]);
+    });
+    jQuery(this._doc.body).bind("mousedown", function (e) {
+        wym.mousedown(e);
     });
 };
 
