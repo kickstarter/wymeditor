@@ -20,6 +20,7 @@
 WYMeditor.WymClassOpera = function(wym) {
     this._wym = wym;
     this._class = "class";
+    this._newLine = "\r\n";
 };
 
 WYMeditor.WymClassOpera.prototype.initIframe = function(iframe) {
@@ -38,7 +39,7 @@ WYMeditor.WymClassOpera.prototype.initIframe = function(iframe) {
     jQuery('html', this._doc).attr('dir', this._options.direction);
 
     //init designMode
-    this._doc.designMode = "on";
+    this._doc.body.contentEditable = "true";
 
     //init html value
     this.html(this._wym._html);
@@ -119,4 +120,5 @@ WYMeditor.WymClassOpera.prototype.keyup = function(evt) {
     //'this' is the doc
     var wym = WYMeditor.INSTANCES[this.title];
     wym._selected_image = null;
+    $(wym._element).trigger('wymeditor:doc_html_updated', [wym, $(wym._doc.body).html()]);
 };

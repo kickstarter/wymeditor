@@ -148,6 +148,7 @@ jQuery.extend(WYMeditor, {
     INSTANCES           : [],
     STRINGS             : [],
     SKINS               : [],
+    CUSTOM_COMMANDS     : [],
     NAME                : "name",
     INDEX               : "{Wym_Index}",
     WYM_INDEX           : "wym_index",
@@ -235,18 +236,13 @@ jQuery.extend(WYMeditor, {
     // of the body tag)
     MAIN_CONTAINERS : ["p",  "h1",  "h2",  "h3", "h4", "h5", "h6", "pre", "blockquote"],
 
-    // All block (as opposed to inline) tags
     BLOCKS : ["address", "blockquote", "div", "dl",
         "fieldset", "form", "h1", "h2", "h3", "h4", "h5", "h6", "hr",
         "noscript", "ol", "p", "pre", "table", "ul", "dd", "dt",
         "li", "tbody", "td", "tfoot", "th", "thead", "tr"],
 
-    // The subset of the `MAIN_CONTAINERS` that prevent the user from using
-    // up/down/enter/backspace from moving above or below them. They
-    // effectively block the creation of new blocks.
     BLOCKING_ELEMENTS : ["table", "blockquote", "pre"],
 
-    // The remaining `MAIN_CONTAINERS` that are not considered `BLOCKING_ELEMENTS`
     NON_BLOCKING_ELEMENTS : ["p", "h1", "h2", "h3", "h4", "h5", "h6"],
 
     // The elements that are allowed to be turned in to lists. If an item in
@@ -275,7 +271,6 @@ jQuery.extend(WYMeditor, {
         COMMAND: 224
     },
 
-    // domNode.nodeType constants
     NODE : {
         ELEMENT: 1,
         ATTRIBUTE: 2,
