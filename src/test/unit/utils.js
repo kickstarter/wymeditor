@@ -29,26 +29,32 @@ function attribToHtml(str) {
 * Apache license, Copyright (C) 2006 Google Inc.
 */
 function normalizeHtml(node) {
-    var html = '';
+    var html = '',
+        name,
+        attrs,
+        attr,
+        n,
+        child,
+        sortedAttrs,
+        i;
     switch (node.nodeType) {
     case 1:  // an element
-        var name = node.tagName.toLowerCase();
+        name = node.tagName.toLowerCase();
 
-        html += '<'+name;
-        var attrs = node.attributes;
-        var attr;
-        var n = attrs.length;
+        html += '<' + name;
+        attrs = node.attributes;
+        n = attrs.length;
         if (n) {
             // Node has attributes, order them
-            var sortedAttrs = [];
-            for (var i = n; --i >= 0;) {
+            sortedAttrs = [];
+            for (i = n; --i >= 0;) {
                 attr = attrs[i];
                 if (attr.specified) {
                     // We only care about specified attributes
                     sortedAttrs.push(attr);
                 }
             }
-            sortedAttrs.sort( function (a, b) {
+            sortedAttrs.sort(function (a, b) {
                 return (a.name < b.name) ? -1 : a.name === b.name ? 0 : 1;
             });
             attrs = sortedAttrs;
@@ -60,7 +66,7 @@ function normalizeHtml(node) {
             }
         }
         html += '>';
-        for (var child = node.firstChild; child; child = child.nextSibling) {
+        for (child = node.firstChild; child; child = child.nextSibling) {
             html += normalizeHtml(child);
         }
         if (node.firstChild || !/^(?:br|link|img)$/.test(name)) {
@@ -68,7 +74,8 @@ function normalizeHtml(node) {
         }
 
         break;
-    case 3: case 4: // text
+    case 3:
+    case 4: // text
         html += textToHtml(node.nodeValue);
         break;
     }
@@ -81,55 +88,108 @@ function normalizeHtml(node) {
 * expected HTML, accounting for differing whitespace and attribute ordering.
 */
 function htmlEquals(wymeditor, expected) {
-    var xhtml = jQuery.trim(wymeditor.xhtml());
-    if (xhtml == '') {
-        // In jQuery 1.2.x, $('') returns an empty list, so we can't call
+    var xhtml = '',
+        normedActual = '',
+        normedExpected = '',
+        tmpNodes,
+        i;
+    xhtml = jQuery.trim(wymeditor.xhtml());
+    if (xhtml === '') {
+        // In jQuery 1.2.x, jQuery('') returns an empty list, so we can't call
         // normalizeHTML. On 1.3.x or higher upgrade, we can remove this
         // check for the empty string
         equals(xhtml, expected);
         return;
     }
 
-    var normedActual = normalizeHtml($(xhtml)[0]);
-    var normedExpected = normalizeHtml($(expected)[0]);
+    tmpNodes = jQuery(xhtml, wymeditor._doc);
+    for (i = 0; i < tmpNodes.length; i++) {
+        normedActual += normalizeHtml(tmpNodes[i]);
+    }
+    tmpNodes = jQuery(expected, wymeditor._doc);
+    for (i = 0; i < tmpNodes.length; i++) {
+        normedExpected += normalizeHtml(tmpNodes[i]);
+    }
+
     equals(normedActual, normedExpected);
 }
 
-function makeSelection(
-        wymeditor, startElement, endElement, startElementIndex, endElementIndex) {
-    if (startElementIndex === null) {
+function makeSelection(wymeditor, startElement, endElement, startElementIndex, endElementIndex) {
+    if (typeof startElementIndex === 'undefined') {
         startElementIndex = 0;
     }
-    if (endElementIndex === null) {
+    if (typeof endElementIndex === 'undefined') {
         endElementIndex = 0;
     }
-    var sel = rangy.getIframeSelection(wymeditor._iframe);
+    var sel = rangy.getIframeSelection(wymeditor._iframe),
+        range = rangy.createRange(wymeditor._doc);
 
-    var range = rangy.createRange(wymeditor._doc);
     range.setStart(startElement, startElementIndex);
     range.setEnd(endElement, endElementIndex);
     if (startElement === endElement &&
-            startElementIndex === 0 && endElementIndex === 0) {
-        // Only collapse the range if we're selecting the start of one element
-        range.collapse(false);
+            startElementIndex === endElementIndex) {
+        // Only collapse the range to the start if the start and end are the
+        // exact same
+        range.collapse(true);
     }
 
-    try {
-        sel.setSingleRange(range);
-    } catch(err) {
-        // ie8 can raise an "unkown runtime error" trying to empty the range
-    }
+    // ie will raise an error if we try to use a Control range that
+    // encompasses more than one element. See:
+    // http://code.google.com/p/rangy/wiki/RangySelection#Control_selections_in_Internet_Explorer
+    // We need to handle internet explorer selection differently
+    sel.setSingleRange(range);
+
     // IE selection hack
-    if ($.browser.msie) {
+    if (jQuery.browser.msie) {
         wymeditor.saveCaret();
     }
 }
+
+/**
+    Make a selection between two elements, but assume that the given indexes
+    are to a child TextNode instead of a child DOM node.
+*/
+function makeTextSelection(wymeditor, startElement, endElement, startElementIndex, endElementIndex) {
+    var $startElementContents,
+        $endElementContents;
+
+    if (typeof startElementIndex !== 'undefined') {
+        // Look for a first-child text node and use
+        // that as the startElement for the makeSelection() call
+        $startElementContents = jQuery(startElement).contents();
+        if ($startElementContents.length > 0 &&
+                $startElementContents.get(0).nodeType === WYMeditor.NODE.TEXT) {
+            startElement = $startElementContents.get(0);
+        }
+    }
+    if (typeof endElementIndex !== 'undefined') {
+        // Look for a first-child text node and use
+        // that as the startElement for the makeSelection() call
+        $endElementContents = jQuery(endElement).contents();
+        if ($endElementContents.length > 0 &&
+                $endElementContents.get(0).nodeType === WYMeditor.NODE.TEXT) {
+            endElement = $endElementContents.get(0);
+        }
+    }
+
+    makeSelection(wymeditor, startElement, endElement, startElementIndex, endElementIndex);
+}
+
 
 /*
 * Move the selection to the start of the given element within the editor.
 */
 function moveSelector(wymeditor, selectedElement) {
-    makeSelection(wymeditor, selectedElement, selectedElement, 0, 0);
+    if (selectedElement.tagName.toLowerCase() === 'span') {
+        // Hack to make span element selections work outside of FF. Webkit and
+        // IE select the node before the span if you try a collapsed selection
+        // on a span node.
+        // Should probably be doing block vs inline detection here instead of
+        // hardcoding detection for a span element
+        makeSelection(wymeditor, selectedElement, selectedElement, 0, 1);
+    } else {
+        makeSelection(wymeditor, selectedElement, selectedElement, 0, 0);
+    }
 
     equals(wymeditor.selected(), selectedElement, "moveSelector");
 }
@@ -144,34 +204,38 @@ function simulateKey(keyCode, targetElement, options) {
         'ctrlKey': false,
         'shiftKey': false,
         'altKey': false
-    };
+    },
+        keydown,
+        keypress,
+        keyup;
 
-    options = $.extend(defaults, options);
+    options = jQuery.extend(defaults, options);
 
-    var keydown = $.Event('keydown');
+    keydown = jQuery.Event('keydown');
+
     keydown.keyCode = keyCode;
     keydown.metaKey = options.metaKey;
     keydown.ctrlKey = options.ctrlKey;
     keydown.shiftKey = options.shiftKey;
     keydown.altKey = options.altKey;
 
-    var keypress = $.Event('keypress');
+    keypress = jQuery.Event('keypress');
     keypress.keyCode = keyCode;
     keydown.metaKey = options.metaKey;
     keydown.ctrlKey = options.ctrlKey;
     keydown.shiftKey = options.shiftKey;
     keydown.altKey = options.altKey;
 
-    var keyup = $.Event('keyup');
+    keyup = jQuery.Event('keyup');
     keyup.keyCode = keyCode;
     keydown.metaKey = options.metaKey;
     keydown.ctrlKey = options.ctrlKey;
     keydown.shiftKey = options.shiftKey;
     keydown.altKey = options.altKey;
 
-    $(targetElement).trigger(keydown);
-    $(targetElement).trigger(keypress);
-    $(targetElement).trigger(keyup);
+    jQuery(targetElement).trigger(keydown);
+    jQuery(targetElement).trigger(keypress);
+    jQuery(targetElement).trigger(keyup);
 }
 
 /*
@@ -179,12 +243,13 @@ function simulateKey(keyCode, targetElement, options) {
     Mimics https://developer.mozilla.org/en/DOM/element.isContentEditable
 */
 function isContentEditable(element) {
-    if (typeof(element.isContentEditable) !== 'undefined') {
-        // Firefox has a shortcut for us
+    // We can't use isContentEditable in firefox 7 because it doesn't take
+    // in to account designMode like firefox 3 did
+    if (!jQuery.browser.mozilla && typeof element.isContentEditable  !== 'undefined') {
         return element.isContentEditable;
     }
 
-    if (element.contentEditable == '' || element.contentEditable === true) {
+    if (element.contentEditable === '' || element.contentEditable === true) {
         return true;
     } else if (element.contentEditable === false) {
         return false;
