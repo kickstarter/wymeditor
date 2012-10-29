@@ -4,6 +4,7 @@ BUILD_DIR = dist
 
 JS_FILES = ${WYM_DIR}/core.js\
  ${WYM_DIR}/rangy/rangy-core.js\
+ ${WYM_DIR}/rangy/rangy-selectionsaverestore.js\
  ${WYM_DIR}/editor/base.js\
  ${WYM_DIR}/editor/ie.js\
  ${WYM_DIR}/editor/firefox.js\
@@ -20,12 +21,12 @@ JS_FILES = ${WYM_DIR}/core.js\
  ${WYM_DIR}/parser/css-lexer.js\
  ${WYM_DIR}/parser/css-parser.js
 
-WE = ${BUILD_DIR}/jquery.wymeditor.js
-WE_MIN = ${BUILD_DIR}/jquery.wymeditor.min.js
-WE_ARCH = wymeditor.tar.gz
-
 WYM_VER = $(shell cat version.txt)
 VER = sed "s/@VERSION/$(WYM_VER)/"
+
+WE = ${BUILD_DIR}/jquery.wymeditor.js
+WE_MIN = ${BUILD_DIR}/jquery.wymeditor.min.js
+WE_ARCH = wymeditor-${WYM_VER}.tar.gz
 
 MERGE = cat ${JS_FILES} | perl -pe 's/^\xEF\xBB\xBF//g' | ${VER} > ${WE}
 WE_MINIFIER = uglifyjs ${WE} > ${WE_MIN}
@@ -57,7 +58,7 @@ archive: min
 	@@echo " - Creating archive"
 	@@mkdir -p ${BUILD_DIR}/wymeditor/wymeditor
 
-	@@cp README.md CHANGELOG.rst AUTHORS *.txt ${BUILD_DIR}/wymeditor
+	@@cp README.md CHANGELOG.md AUTHORS *.txt ${BUILD_DIR}/wymeditor
 	@@cp -pR ${SRC_DIR}/examples ${BUILD_DIR}/wymeditor
 	@@cp -pR ${SRC_DIR}/jquery ${BUILD_DIR}/wymeditor
 

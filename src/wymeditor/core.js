@@ -1,4 +1,5 @@
 /*jslint evil: true, indent: 4 */
+/*@version @VERSION */
 /**
     WYMeditor
     =========
@@ -36,7 +37,9 @@ if (typeof (WYMeditor) === 'undefined') {
 
 // Wrap the Firebug console in WYMeditor.console
 (function () {
-    if (!window.console || !window.console.firebug) {
+    if (typeof window.console === 'undefined'
+            && typeof console === 'undefined') {
+        // No in-browser console logging available
         var names = [
                 "log", "debug", "info", "warn", "error", "assert", "dir", "dirxml",
                 "group", "groupEnd", "time", "timeEnd", "count", "trace", "profile",
@@ -49,8 +52,14 @@ if (typeof (WYMeditor) === 'undefined') {
         for (i = 0; i < names.length; i += 1) {
             WYMeditor.console[names[i]] = noOp;
         }
-
-    } else {
+    } else if (console) {
+        // ie8+
+        WYMeditor.console = console;
+    } else if (window.console.firebug) {
+        // FF with firebug
+        WYMeditor.console = window.console;
+    } else if (window.console) {
+        // Chrome
         WYMeditor.console = window.console;
     }
 }());
@@ -174,6 +183,7 @@ jQuery.extend(WYMeditor, {
     STATUS              : "{Wym_Status}",
     DIALOG_TITLE        : "{Wym_Dialog_Title}",
     DIALOG_BODY         : "{Wym_Dialog_Body}",
+    NEWLINE             : "\n",
     STRING              : "string",
     BODY                : "body",
     DIV                 : "div",
@@ -222,17 +232,31 @@ jQuery.extend(WYMeditor, {
     INSERT_UNORDEREDLIST: "InsertUnorderedList",
     INSERT_ORDEREDLIST  : "InsertOrderedList",
 
-    MAIN_CONTAINERS : ["p",  "h1",  "h2",  "h3", "h4", "h5", "h6", "pre", "blockquote"], 
+    // Containers that we allow at the root of the document (as a direct child
+    // of the body tag)
+    MAIN_CONTAINERS : ["p",  "h1",  "h2",  "h3", "h4", "h5", "h6", "pre", "blockquote"],
 
+    // All block (as opposed to inline) tags
     BLOCKS : ["address", "blockquote", "div", "dl",
         "fieldset", "form", "h1", "h2", "h3", "h4", "h5", "h6", "hr",
         "noscript", "ol", "p", "pre", "table", "ul", "dd", "dt",
         "li", "tbody", "td", "tfoot", "th", "thead", "tr"],
 
+    // The subset of the `MAIN_CONTAINERS` that prevent the user from using
+    // up/down/enter/backspace from moving above or below them. They
+    // effectively block the creation of new blocks.
     BLOCKING_ELEMENTS : ["table", "blockquote", "pre"],
 
+    // The remaining `MAIN_CONTAINERS` that are not considered `BLOCKING_ELEMENTS`
     NON_BLOCKING_ELEMENTS : ["p", "h1", "h2", "h3", "h4", "h5", "h6"],
 
+    // The elements that are allowed to be turned in to lists. If an item in
+    // this array isn't in the MAIN_CONTAINERS array, then its contents will be
+    // turned in to a list instead.
+    POTENTIAL_LIST_ELEMENTS : ["p", "h1", "h2", "h3", "h4", "h5", "h6", "pre", "blockquote", "td"],
+
+    // Keyboard mappings so that we don't have to remember that 38 means up
+    // when reading keyboard handlers
     KEY : {
         BACKSPACE: 8,
         TAB: 9,
@@ -252,6 +276,7 @@ jQuery.extend(WYMeditor, {
         COMMAND: 224
     },
 
+    // domNode.nodeType constants
     NODE : {
         ELEMENT: 1,
         ATTRIBUTE: 2,
@@ -352,7 +377,7 @@ jQuery.fn.wymeditor = function (options) {
         lang:       "en",
         direction:  "ltr",
         customCommands: [],
-        boxHtml: String +
+        boxHtml: String() +
             "<div class='wym_box'>" +
                 "<div class='wym_area_top'>" +
                     WYMeditor.TOOLS +
@@ -372,11 +397,11 @@ jQuery.fn.wymeditor = function (options) {
                 "</div>" +
             "</div>",
 
-        logoHtml: String +
+        logoHtml: String() +
             '<a class="wym_wymeditor_link" ' +
                 'href="http://www.wymeditor.org/">WYMeditor</a>',
 
-        iframeHtml: String +
+        iframeHtml: String() +
             '<div class="wym_iframe wym_section">' +
                 '<iframe src="' + WYMeditor.IFRAME_BASE_PATH + 'wymiframe.html" ' +
                     'onload="this.contentWindow.parent.WYMeditor.INSTANCES[' +
@@ -385,7 +410,7 @@ jQuery.fn.wymeditor = function (options) {
             "</div>",
 
         editorStyles: [],
-        toolsHtml: String +
+        toolsHtml: String() +
             '<div class="wym_tools wym_section">' +
                 '<h2>{Tools}</h2>' +
                 '<ul>' +
@@ -393,9 +418,9 @@ jQuery.fn.wymeditor = function (options) {
                 '</ul>' +
             '</div>',
 
-        toolsItemHtml: String +
+        toolsItemHtml: String() +
             '<li class="' + WYMeditor.TOOL_CLASS + '">' +
-                '<a href="#" name="' + WYMeditor.TOOL_NAME + '"' +
+                '<a href="#" name="' + WYMeditor.TOOL_NAME + '" ' +
                         'title="' + WYMeditor.TOOL_TITLE + '">' +
                     WYMeditor.TOOL_TITLE +
                 '</a>' +
@@ -426,7 +451,7 @@ jQuery.fn.wymeditor = function (options) {
             {'name': 'Preview', 'title': 'Preview', 'css': 'wym_tools_preview'}
         ],
 
-        containersHtml: String +
+        containersHtml: String() +
             '<div class="wym_containers wym_section">' +
                 '<h2>{Containers}</h2>' +
                 '<ul>' +
@@ -434,7 +459,7 @@ jQuery.fn.wymeditor = function (options) {
                 '</ul>' +
             '</div>',
 
-        containersItemHtml: String +
+        containersItemHtml: String() +
             '<li class="' + WYMeditor.CONTAINER_CLASS + '">' +
                 '<a href="#" name="' + WYMeditor.CONTAINER_NAME + '">' +
                     WYMeditor.CONTAINER_TITLE +
@@ -455,7 +480,7 @@ jQuery.fn.wymeditor = function (options) {
             {'name': 'TH', 'title': 'Table_Header', 'css': 'wym_containers_th'}
         ],
 
-        classesHtml: String +
+        classesHtml: String() +
             '<div class="wym_classes wym_section">' +
                 '<h2>{Classes}</h2>' +
                 '<ul>' +
@@ -463,7 +488,7 @@ jQuery.fn.wymeditor = function (options) {
                 '</ul>' +
             '</div>',
 
-        classesItemHtml: String +
+        classesItemHtml: String() +
             '<li class="wym_classes_' + WYMeditor.CLASS_NAME + '">' +
                 '<a href="#" name="' + WYMeditor.CLASS_NAME + '">' +
                     WYMeditor.CLASS_TITLE +
@@ -471,12 +496,12 @@ jQuery.fn.wymeditor = function (options) {
             '</li>',
 
         classesItems:      [],
-        statusHtml: String +
+        statusHtml: String() +
             '<div class="wym_status wym_section">' +
                 '<h2>{Status}</h2>' +
             '</div>',
 
-        htmlHtml: String +
+        htmlHtml: String() +
             '<div class="wym_html wym_section">' +
                 '<h2>{Source_Code}</h2>' +
                 '<textarea class="wym_html_val"></textarea>' +
@@ -527,7 +552,7 @@ jQuery.fn.wymeditor = function (options) {
         dialogFeaturesPreview: "menubar=no,titlebar=no,toolbar=no,resizable=no" +
             ",scrollbars=yes,width=560,height=300,top=0,left=0",
 
-        dialogHtml: String +
+        dialogHtml: String() +
             '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" ' +
                     '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">' +
             '<html dir="' + WYMeditor.DIRECTION + '">' +
@@ -543,7 +568,7 @@ jQuery.fn.wymeditor = function (options) {
                 WYMeditor.DIALOG_BODY +
             '</html>',
 
-        dialogLinkHtml: String +
+        dialogLinkHtml: String() +
             '<body class="wym_dialog wym_dialog_link" ' +
                     ' onload="WYMeditor.INIT_DIALOG(' + WYMeditor.INDEX + ')">' +
                 '<form>' +
@@ -576,7 +601,7 @@ jQuery.fn.wymeditor = function (options) {
                 '</form>' +
             '</body>',
 
-        dialogImageHtml: String +
+        dialogImageHtml: String() +
             '<body class="wym_dialog wym_dialog_image" ' +
                     'onload="WYMeditor.INIT_DIALOG(' + WYMeditor.INDEX + ')">' +
                 '<form>' +
@@ -607,7 +632,7 @@ jQuery.fn.wymeditor = function (options) {
                 '</form>' +
             '</body>',
 
-        dialogTableHtml: String +
+        dialogTableHtml: String() +
             '<body class="wym_dialog wym_dialog_table" ' +
                     'onload="WYMeditor.INIT_DIALOG(' + WYMeditor.INDEX + ')">' +
                 '<form>' +
@@ -643,7 +668,7 @@ jQuery.fn.wymeditor = function (options) {
                 '</form>' +
             '</body>',
 
-        dialogPasteHtml: String +
+        dialogPasteHtml: String() +
             '<body class="wym_dialog wym_dialog_paste" ' +
                     'onload="WYMeditor.INIT_DIALOG(' + WYMeditor.INDEX + ')">' +
                 '<form>' +
@@ -665,7 +690,7 @@ jQuery.fn.wymeditor = function (options) {
                 '</form>' +
             '</body>',
 
-        dialogPreviewHtml: String +
+        dialogPreviewHtml: String() +
             '<body class="wym_dialog wym_dialog_preview" ' +
                 'onload="WYMeditor.INIT_DIALOG(' + WYMeditor.INDEX + ')"></body>',
 
@@ -691,7 +716,7 @@ jQuery.fn.wymeditor = function (options) {
     });
 };
 
-// Enable accessing of wymeditor instances via $.wymeditors
+// Enable accessing of wymeditor instances via jQuery.wymeditors
 jQuery.extend({
     wymeditors: function (i) {
         return WYMeditor.INSTANCES[i];
@@ -940,6 +965,107 @@ jQuery.fn.isPhantomNode = function () {
     return false;
 };
 
+/**
+    jQuery.fn.nextContentsUntil
+    ===========================
+
+    Acts like jQuery.nextUntil() but includes text nodes and comments and only
+    works on the first element in the given jQuery collection..
+*/
+jQuery.fn.nextContentsUntil = function (selector, filter) {
+    var matched = [],
+        $matched,
+        cur = this.get(0);
+
+    selector = selector ? selector : '';
+    filter = filter ? filter : '';
+
+    if (!cur) {
+        // Called on an empty selector. The sibling of nothing is nothing
+        return jQuery();
+    }
+    // We don't want to include this element, only its siblings
+    cur = cur.nextSibling;
+
+    while (cur) {
+        if (!jQuery(cur).is(selector)) {
+            matched.push(cur);
+            cur = cur.nextSibling;
+        } else {
+            break;
+        }
+    }
+
+    $matched = jQuery(matched);
+    if (filter) {
+        return $matched.filter(filter);
+    }
+    return $matched;
+};
+/**
+    jQuery.fn.nextAllContents
+    =========================
+
+    Acts like jQuery.nextAll() but includes text nodes and comments and only
+    works on the first element in the given jQuery collection..
+
+    Mostly cribbed from the jQuery source.
+*/
+jQuery.fn.nextAllContents = function () {
+    return jQuery(this).nextContentsUntil('', '');
+};
+
+/**
+    jQuery.fn.prevContentsUntil
+    ===========================
+
+    Acts like jQuery.prevUntil() but includes text nodes and comments and only
+    works on the first element in the given jQuery collection..
+*/
+jQuery.fn.prevContentsUntil = function (selector, filter) {
+    var matched = [],
+        $matched,
+        cur = this.get(0);
+
+    selector = selector ? selector : '';
+    filter = filter ? filter : '';
+
+    if (!cur) {
+        // Called on an empty selector. The sibling of nothing is nothing
+        return jQuery();
+    }
+    // We don't want to include this element, only its siblings
+    cur = cur.previousSibling;
+
+    while (cur) {
+        if (!jQuery(cur).is(selector)) {
+            matched.push(cur);
+            cur = cur.previousSibling;
+        } else {
+            break;
+        }
+    }
+
+    $matched = jQuery(matched);
+    if (filter) {
+        return $matched.filter(filter);
+    }
+    return $matched;
+};
+
+/**
+    jQuery.fn.prevAllContents
+    =========================
+
+    Acts like jQuery.prevAll() but includes text nodes and comments and only
+    works on the first element in the given jQuery collection..
+
+    Mostly cribbed from the jQuery source.
+*/
+jQuery.fn.prevAllContents = function () {
+    return jQuery(this).prevContentsUntil('', '');
+};
+
 WYMeditor.isPhantomNode = function (n) {
     if (n.nodeType === 3) {
         return !(/[^\t\n\r ]/.test(n.data));
@@ -967,6 +1093,37 @@ jQuery.fn.parentsOrSelf = function (jqexpr) {
     } else {
         return n.parents(jqexpr).slice(0, 1);
     }
+};
+
+/*
+    WYMeditor.changeNodeType
+    ========================
+
+    Change the type (tagName) of the given node, while retaining all content,
+    properties and attributes.
+*/
+WYMeditor.changeNodeType = function (node, newTag) {
+    var newNode,
+        i,
+        attributes = node.attributes;
+
+    // In ie6, have to create the node as part of wrapInner before we can copy
+    // over attributes
+    jQuery(node).wrapInner('<' + newTag + '>');
+    newNode = jQuery(node).children().get(0);
+
+    // Copy attributes
+    for (i = 0; i < attributes.length; i++) {
+        if (attributes[i].specified) {
+            // We only care about specified attributes
+            newNode.setAttribute(attributes[i].nodeName, attributes[i].nodeValue);
+        }
+    }
+
+    // Not copying inline CSS or properties/events
+
+    jQuery(node).contents().unwrap();
+    return newNode;
 };
 
 // String & array helpers
