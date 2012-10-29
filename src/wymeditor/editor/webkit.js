@@ -43,7 +43,7 @@ WYMeditor.WymClassSafari.prototype.initIframe = function (iframe) {
     jQuery('html', this._doc).attr('dir', this._options.direction);
 
     //init designMode
-    this._doc.designMode = "on";
+    this._doc.body.contentEditable = "true";
 
     //init html value
     this.html(this._wym._html);
@@ -69,6 +69,8 @@ WYMeditor.WymClassSafari.prototype.initIframe = function (iframe) {
 
     //add event listeners to doc elements, e.g. images
     this.listen();
+    
+    jQuery(this._element).trigger('wymeditor:iframe_loaded');
 };
 
 WYMeditor.WymClassSafari.prototype._exec = function (cmd, param) {
@@ -194,6 +196,8 @@ WYMeditor.WymClassSafari.prototype.keyup = function (evt) {
             wym._exec(WYMeditor.FORMAT_BLOCK, WYMeditor.P);
             wym.fixBodyHtml();
         }
+
+        $(wym._element).trigger('wymeditor:doc_html_updated', [wym, $(wym._doc.body).html()]);
     }
 
     // If we potentially created a new block level element or moved to a new one
@@ -208,9 +212,7 @@ WYMeditor.WymClassSafari.prototype.keyup = function (evt) {
     }
 };
 
-WYMeditor.WymClassSafari.prototype.openBlockTag = function (tag, attributes) {
-    var new_tag;
-
+WYMeditor.WymClassSafari.prototype.openBlockTag = function(tag, attributes) {
     attributes = this.validator.getValidTagAttributes(tag, attributes);
 
     // Handle Safari styled spans

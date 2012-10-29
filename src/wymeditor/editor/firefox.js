@@ -89,6 +89,8 @@ WYMeditor.WymClassMozilla.prototype.initIframe = function (iframe) {
 
     //add event listeners to doc elements, e.g. images
     this.listen();
+    
+    jQuery(this._element).trigger('wymeditor:iframe_loaded');
 };
 
 /* @name html
@@ -214,6 +216,9 @@ WYMeditor.WymClassMozilla.prototype.keyup = function (evt) {
         }
 
         // prevent the up arrow on the first node from creating a new P
+        //
+        // TODO: will this code ever run? it looks like the parent if would
+        // block up/down key presses from getting here
         if((evt.keyCode == 38 || evt.keyCode == 40) && name == WYMeditor.BODY ) { // UP/DOWN arrow
           var focusNode = wym.selection().focusNode;
           var up = evt.keyCode == 38;
@@ -240,6 +245,8 @@ WYMeditor.WymClassMozilla.prototype.keyup = function (evt) {
             wym._exec(WYMeditor.FORMAT_BLOCK, WYMeditor.P);
             wym.fixBodyHtml();
         }
+
+        $(wym._element).trigger('wymeditor:doc_html_updated', [wym, $(wym._doc.body).html()]);
     }
 
     // If we potentially created a new block level element or moved to a new one
@@ -290,14 +297,10 @@ WYMeditor.WymClassMozilla.prototype.click = function (evt) {
     }
 };
 
-WYMeditor.WymClassMozilla.prototype.enableDesignMode = function () {
-    if (this._doc.designMode === "off") {
-        try {
-            this._doc.designMode = "on";
-            this._doc.execCommand("styleWithCSS", '', false);
-            this._doc.execCommand("enableObjectResizing", false, true);
-        } catch (e) {}
-    }
+WYMeditor.WymClassMozilla.prototype.enableDesignMode = function() {
+    this._doc.body.contentEditable = "true";
+    this._doc.execCommand("styleWithCSS", '', false);
+    this._doc.execCommand("enableObjectResizing", false, false);
 };
 
 WYMeditor.WymClassMozilla.prototype.openBlockTag = function (tag, attributes) {

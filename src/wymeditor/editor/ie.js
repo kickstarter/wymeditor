@@ -51,8 +51,8 @@ WYMeditor.WymClassExplorer.prototype.initIframe = function (iframe) {
     //handle events
     var wym = this;
 
-    this._doc.body.onfocus = function () {
-        wym._doc.designMode = "on";
+    this._doc.body.onfocus = function() {
+        wym._doc.body.contentEditable = "true";
         wym._doc = iframe.contentWindow.document;
     };
     this._doc.onbeforedeactivate = function () {
@@ -74,14 +74,18 @@ WYMeditor.WymClassExplorer.prototype.initIframe = function (iframe) {
         wym.saveCaret();
     };
 
-    this._doc.body.onbeforepaste = function () {
+    /* this doesn't work for me.
+     * TODO: look into it later :-)
+    
+    this._doc.body.onbeforepaste = function() {
         wym._iframe.contentWindow.event.returnValue = false;
     };
 
-    this._doc.body.onpaste = function () {
+    this._doc.body.onpaste = function() {
         wym._iframe.contentWindow.event.returnValue = false;
         wym.paste(window.clipboardData.getData("Text"));
     };
+    */
 
     //callback can't be executed twice, so we check
     if (this._initialized) {
@@ -112,7 +116,9 @@ WYMeditor.WymClassExplorer.prototype.initIframe = function (iframe) {
         // (bermi's note) noticed when running unit tests on IE6
         // Is this really needed, it trigger an unexisting property on IE6
         this._doc = iframe.contentWindow.document;
-    } catch (e) {}
+    } catch(e) {}
+    
+    jQuery(this._element).trigger('wymeditor:iframe_loaded');
 };
 
 (function (editorLoadSkin) {
@@ -159,7 +165,20 @@ WYMeditor.WymClassExplorer.prototype._exec = function (cmd, param) {
     }
 };
 
+WYMeditor.WymClassExplorer.prototype.selected = function() {
+    var caretPos = this._iframe.contentWindow.document.caretPos;
+    if (caretPos) {
+        if (caretPos.parentElement) {
+          return caretPos.parentElement();
+        }
+    }
+};
+
 WYMeditor.WymClassExplorer.prototype.saveCaret = function () {
+    this._doc.caretPos = this._doc.selection.createRange();
+};
+
+WYMeditor.WymClassExplorer.prototype.saveCaret = function() {
     this._doc.caretPos = this._doc.selection.createRange();
 };
 
@@ -258,6 +277,7 @@ WYMeditor.WymClassExplorer.prototype.keyup = function (evt) {
             wym._exec(WYMeditor.FORMAT_BLOCK, WYMeditor.P);
             wym.fixBodyHtml();
         }
+        $(wym._element).trigger('wymeditor:doc_html_updated', [wym, $(wym._doc.body).html()]);
     }
 
     // If we potentially created a new block level element or moved to a new one
@@ -314,3 +334,42 @@ WYMeditor.WymClassExplorer.prototype.spaceBlockingElements = function () {
     $body.find(blockSepSelector).before(placeholderNode);
 };
 
+/* @name paste
+ * @description         Paste text into the editor below the carret,
+ *                      used for "Paste from Word".
+ * @param String str    String to insert, two or more newlines separates
+ *                      paragraphs. May contain inline HTML.
+ */
+WYMeditor.WymClassExplorer.prototype.paste = function(str) {
+    var container = this.selected(),
+        html = '',
+        paragraphs,
+        focusNode;
+
+    // Insert where appropriate
+    if (container && container.tagName.toLowerCase() != WYMeditor.BODY) {
+        // No .last() pre jQuery 1.4
+        //focusNode = jQuery(html).insertAfter(container).last()[0];
+        paragraphs = jQuery(container).append(str);
+        focusNode = paragraphs[paragraphs.length - 1];
+    } else {
+        // Split string into paragraphs by two or more newlines
+        paragraphs = str.split(new RegExp(this._newLine + '{2,}', 'g'));
+
+        // Build html
+        for (var i=0, l=paragraphs.length; i < l; i++) {
+            html += '<p>' +
+                ( paragraphs[i].split(this._newLine).join('<br />') ) +
+                '</p>';
+        }
+
+        paragraphs = jQuery(html, this._doc).appendTo(this._doc.body);
+        focusNode = paragraphs[paragraphs.length - 1];
+    }
+
+    // And remove br (if editor was empty)
+    jQuery('body > br', this._doc).remove();
+
+    // Restore focus
+    this.setFocusToNode(focusNode);
+};
