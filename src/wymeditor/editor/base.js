@@ -1246,7 +1246,7 @@ WYMeditor.editor.prototype.insert = function (html) {
     }
 };
 
-WYMeditor.editor.prototype.insert_next = function (html) {
+WYMeditor.editor.prototype.insertBlock = function (html) {
     // Thanks to Tim Down:
     // http://groups.google.com/group/rangy/browse_thread/thread/2d788fc867e8cd54
     var sel = this.selection(),
