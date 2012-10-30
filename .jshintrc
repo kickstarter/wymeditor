@@ -19,6 +19,7 @@
 
     "globals"        : {  // Custom globals.
         "WYMeditor" : true
+        "rangy" : true
     },
 
 
