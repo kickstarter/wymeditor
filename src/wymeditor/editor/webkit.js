@@ -79,10 +79,11 @@ WYMeditor.WymClassSafari.prototype._exec = function (cmd, param) {
     }
 
     var focusNode = this.selected(),
-        _param, container, attr;
+        _param, container, attr,
+        i;
 
     // DIV insert detection (causes problems)
-    if (cmd.toLowerCase() == WYMeditor.INSERT_HTML.toLowerCase()) {
+    if (cmd.toLowerCase() === WYMeditor.INSERT_HTML.toLowerCase()) {
         _param = jQuery(param);
 
         if (_param.is('div')) {
@@ -91,7 +92,7 @@ WYMeditor.WymClassSafari.prototype._exec = function (cmd, param) {
             this._doc.execCommand(WYMeditor.FORMAT_BLOCK, '', WYMeditor.DIV);
             // copy attributes
             container = this.selected();
-            for (var i = 0; i < attr.length; i++) {
+            for (i = 0; i < attr.length; i++) {
                 container.setAttribute(attr[i].name, attr[i].value);
             }
 
@@ -212,7 +213,8 @@ WYMeditor.WymClassSafari.prototype.keyup = function (evt) {
     }
 };
 
-WYMeditor.WymClassSafari.prototype.openBlockTag = function(tag, attributes) {
+WYMeditor.WymClassSafari.prototype.openBlockTag = function (tag, attributes) {
+    var new_tag;
     attributes = this.validator.getValidTagAttributes(tag, attributes);
 
     // Handle Safari styled spans

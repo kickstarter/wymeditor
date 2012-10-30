@@ -49,9 +49,9 @@ WYMeditor.editor.prototype.init = function () {
     }
 
     if (!this._options.disable_sanitization) {
-	    SaxListener = new WYMeditor.XhtmlSaxListener();
-	    jQuery.extend(SaxListener, WymClass);
-	    this.parser = new WYMeditor.XhtmlParser(SaxListener);
+        SaxListener = new WYMeditor.XhtmlSaxListener();
+        jQuery.extend(SaxListener, WymClass);
+        this.parser = new WYMeditor.XhtmlParser(SaxListener);
     }
 
     if (this._options.styles || this._options.stylesheet) {
@@ -64,7 +64,7 @@ WYMeditor.editor.prototype.init = function () {
     // We're not using jQuery.extend because we *want* to copy properties via
     // the prototype chain
     for (prop in WymClass) {
-        /*jslint forin: false*/
+        /*jshint forin: false*/
         // Explicitly not using hasOwnProperty for the inheritance here
         // because we want to go up the prototype chain to get all of the
         // browser-specific editor methods. This is kind of a code smell,
@@ -73,11 +73,11 @@ WYMeditor.editor.prototype.init = function () {
     }
 
     // Load wymbox
-    this._box = jQuery(this._element).
-        hide().
-        after(this._options.boxHtml).
-        next().
-        addClass('wym_box_' + this._index);
+    this._box = jQuery(this._element)
+        .hide()
+        .after(this._options.boxHtml)
+        .next()
+        .addClass('wym_box_' + this._index);
 
     // Store the instance index and replaced element in wymbox
     // but keep it compatible with jQuery < 1.2.3, see #122

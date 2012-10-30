@@ -159,7 +159,7 @@ WYMeditor.WymClassMozilla.prototype.keydown = function (evt) {
       $p = $(wym.selection().focusNode).closest('p');
 
     if ($p.length) {
-      $last_focused_p = $p;
+        $last_focused_p = $p;
     }
 
     if (evt.ctrlKey) {
@@ -183,7 +183,12 @@ WYMeditor.WymClassMozilla.prototype.keyup = function (evt) {
     // 'this' is the doc
     var wym = WYMeditor.INSTANCES[this.title],
         container,
-        name;
+        name,
+        focusNode,
+        up,
+        $target_p,
+        sel,
+        p_range;
 
     wym._selected_image = null;
     container = null;
@@ -219,25 +224,27 @@ WYMeditor.WymClassMozilla.prototype.keyup = function (evt) {
         //
         // TODO: will this code ever run? it looks like the parent if would
         // block up/down key presses from getting here
-        if((evt.keyCode == 38 || evt.keyCode == 40) && name == WYMeditor.BODY ) { // UP/DOWN arrow
-          var focusNode = wym.selection().focusNode;
-          var up = evt.keyCode == 38;
-          if($last_focused_p.length) {
-            var $target_p = $([]);
-            if(up) {
-              $target_p = $last_focused_p.prevAll('p');
-            } else {
-              $target_p = $last_focused_p.nextAll('p');
+        if ((evt.keyCode === 38 || evt.keyCode === 40) && name === WYMeditor.BODY) { // UP/DOWN arrow
+            focusNode = wym.selection().focusNode;
+            up = evt.keyCode === 38;
+            if ($last_focused_p.length) {
+                $target_p = $([]);
+                if (up) {
+                    $target_p = $last_focused_p.prevAll('p');
+                } else {
+                    $target_p = $last_focused_p.nextAll('p');
+                }
+                if (!$target_p.length) {
+                    $target_p = $last_focused_p;
+                }
+                sel = wym._iframe.contentWindow.getSelection();
+                p_range = wym._iframe.contentWindow.document.createRange();
+                p_range.setStart($target_p[0], 0);
+                p_range.setEnd($target_p[0], 0);
+                sel.removeAllRanges();
+                sel.addRange(p_range);
+                return;
             }
-            if(!$target_p.length) $target_p = $last_focused_p;
-            var sel = wym._iframe.contentWindow.getSelection();
-            var p_range = wym._iframe.contentWindow.document.createRange();
-            p_range.setStart($target_p[0], 0);
-            p_range.setEnd($target_p[0], 0);
-            sel.removeAllRanges();
-            sel.addRange(p_range);
-            return;
-          }
         }
 
         if (name === WYMeditor.BODY) {
@@ -270,8 +277,8 @@ WYMeditor.WymClassMozilla.prototype.click = function (evt) {
         if (container && container.tagName.toLowerCase() === WYMeditor.TR) {
             // Starting with FF 3.6, inserted tables need some content in their
             // cells before they're editable
-            jQuery(WYMeditor.TD, wym._doc.body).
-                append(WYMeditor.WymClassMozilla.CELL_PLACEHOLDER);
+            jQuery(WYMeditor.TD, wym._doc.body)
+                .append(WYMeditor.WymClassMozilla.CELL_PLACEHOLDER);
 
             // The user is still going to need to move out of and then back in
             // to this cell if the table was inserted via an inner_html call
@@ -297,7 +304,7 @@ WYMeditor.WymClassMozilla.prototype.click = function (evt) {
     }
 };
 
-WYMeditor.WymClassMozilla.prototype.enableDesignMode = function() {
+WYMeditor.WymClassMozilla.prototype.enableDesignMode = function () {
     this._doc.body.contentEditable = "true";
     this._doc.execCommand("styleWithCSS", '', false);
     this._doc.execCommand("enableObjectResizing", false, false);

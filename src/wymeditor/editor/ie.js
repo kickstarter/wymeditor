@@ -35,8 +35,10 @@ WYMeditor.WymClassExplorer.prototype.initIframe = function (iframe) {
     this._doc = iframe.contentWindow.document;
 
     //add css rules from options
-    var styles = this._doc.styleSheets[0];
-    var aCss = eval(this._options.editorStyles);
+    var styles = this._doc.styleSheets[0],
+      aCss = eval(this._options.editorStyles),
+      wym = this,
+      ieVersion;
 
     this.addCssRules(this._doc, aCss);
 
@@ -49,9 +51,7 @@ WYMeditor.WymClassExplorer.prototype.initIframe = function (iframe) {
     jQuery(this._doc.body).html(this._wym._html);
 
     //handle events
-    var wym = this;
-
-    this._doc.body.onfocus = function() {
+    this._doc.body.onfocus = function () {
         wym._doc.body.contentEditable = "true";
         wym._doc = iframe.contentWindow.document;
     };
@@ -61,7 +61,7 @@ WYMeditor.WymClassExplorer.prototype.initIframe = function (iframe) {
     jQuery(this._doc).bind('keyup', wym.keyup);
     // Workaround for an ie8 => ie7 compatibility mode bug triggered
     // intermittently by certain combinations of CSS on the iframe
-    var ieVersion = parseInt(jQuery.browser.version, 10);
+    ieVersion = parseInt(jQuery.browser.version, 10);
     if (ieVersion >= 8 && ieVersion < 9) {
         jQuery(this._doc).bind('keydown', function () {
             wym.fixBluescreenOfDeath();
@@ -116,7 +116,7 @@ WYMeditor.WymClassExplorer.prototype.initIframe = function (iframe) {
         // (bermi's note) noticed when running unit tests on IE6
         // Is this really needed, it trigger an unexisting property on IE6
         this._doc = iframe.contentWindow.document;
-    } catch(e) {}
+    } catch (e) {}
     
     jQuery(this._element).trigger('wymeditor:iframe_loaded');
 };
@@ -165,11 +165,11 @@ WYMeditor.WymClassExplorer.prototype._exec = function (cmd, param) {
     }
 };
 
-WYMeditor.WymClassExplorer.prototype.selected = function() {
+WYMeditor.WymClassExplorer.prototype.selected = function () {
     var caretPos = this._iframe.contentWindow.document.caretPos;
     if (caretPos) {
         if (caretPos.parentElement) {
-          return caretPos.parentElement();
+            return caretPos.parentElement();
         }
     }
 };
@@ -178,7 +178,7 @@ WYMeditor.WymClassExplorer.prototype.saveCaret = function () {
     this._doc.caretPos = this._doc.selection.createRange();
 };
 
-WYMeditor.WymClassExplorer.prototype.saveCaret = function() {
+WYMeditor.WymClassExplorer.prototype.saveCaret = function () {
     this._doc.caretPos = this._doc.selection.createRange();
 };
 
@@ -223,13 +223,14 @@ WYMeditor.WymClassExplorer.prototype.wrap = function (left, right) {
 
 WYMeditor.WymClassExplorer.prototype.unwrap = function () {
     // Get the current selection
-    var range = this._doc.selection.createRange();
+    var range = this._doc.selection.createRange(),
+        text;
 
     // Check if the current selection is inside the editor
     if (jQuery(range.parentElement()).parents().is(this._options.iframeBodySelector)) {
         try {
             // Unwrap selection
-            var text = range.text;
+            text = range.text;
             this._exec('Cut');
             range.pasteHTML(text);
         } catch (e) {}
@@ -238,11 +239,11 @@ WYMeditor.WymClassExplorer.prototype.unwrap = function () {
 
 WYMeditor.WymClassExplorer.prototype.keyup = function (evt) {
     //'this' is the doc
-    var wym = WYMeditor.INSTANCES[this.title];
+    var wym = WYMeditor.INSTANCES[this.title],
+        container = null,
+        name = '';
 
     this._selected_image = null;
-
-    var container = null;
 
     if (evt.keyCode !== WYMeditor.KEY.BACKSPACE &&
             evt.keyCode !== WYMeditor.KEY.CTRL &&
@@ -255,7 +256,6 @@ WYMeditor.WymClassExplorer.prototype.keyup = function (evt) {
             !evt.ctrlKey) { // Not BACKSPACE, DELETE, CTRL, or COMMAND key
 
         container = wym.selected();
-        var name = '';
         if (container !== null) {
             name = container.tagName.toLowerCase();
         }
@@ -307,16 +307,19 @@ WYMeditor.WymClassExplorer.prototype.setFocusToNode = function (node, toStart) {
  * elements.
  */
 WYMeditor.WymClassExplorer.prototype.spaceBlockingElements = function () {
-    var blockingSelector = WYMeditor.BLOCKING_ELEMENTS.join(', ');
+    var blockingSelector = WYMeditor.BLOCKING_ELEMENTS.join(', '),
 
-    var $body = jQuery(this._doc).find('body.wym_iframe');
-    var children = $body.children();
-    var placeholderNode = WYMeditor.WymClassExplorer.PLACEHOLDER_NODE;
+        $body = jQuery(this._doc).find('body.wym_iframe'),
+        children = $body.children(),
+        placeholderNode = WYMeditor.WymClassExplorer.PLACEHOLDER_NODE,
+        $firstChild,
+        $lastChild,
+        blockSepSelector;
 
     // Make sure we have the appropriate placeholder nodes
     if (children.length > 0) {
-        var $firstChild = jQuery(children[0]);
-        var $lastChild = jQuery(children[children.length - 1]);
+        $firstChild = jQuery(children[0]);
+        $lastChild = jQuery(children[children.length - 1]);
 
         // Ensure begining placeholder
         if ($firstChild.is(blockingSelector)) {
@@ -327,7 +330,7 @@ WYMeditor.WymClassExplorer.prototype.spaceBlockingElements = function () {
         }
     }
 
-    var blockSepSelector = this._getBlockSepSelector();
+    blockSepSelector = this._getBlockSepSelector();
 
     // Put placeholder nodes between consecutive blocking elements and between
     // blocking elements and normal block-level elements
@@ -340,14 +343,16 @@ WYMeditor.WymClassExplorer.prototype.spaceBlockingElements = function () {
  * @param String str    String to insert, two or more newlines separates
  *                      paragraphs. May contain inline HTML.
  */
-WYMeditor.WymClassExplorer.prototype.paste = function(str) {
+WYMeditor.WymClassExplorer.prototype.paste = function (str) {
     var container = this.selected(),
         html = '',
         paragraphs,
-        focusNode;
+        focusNode,
+        i,
+        l;
 
     // Insert where appropriate
-    if (container && container.tagName.toLowerCase() != WYMeditor.BODY) {
+    if (container && container.tagName.toLowerCase() !== WYMeditor.BODY) {
         // No .last() pre jQuery 1.4
         //focusNode = jQuery(html).insertAfter(container).last()[0];
         paragraphs = jQuery(container).append(str);
@@ -357,9 +362,9 @@ WYMeditor.WymClassExplorer.prototype.paste = function(str) {
         paragraphs = str.split(new RegExp(this._newLine + '{2,}', 'g'));
 
         // Build html
-        for (var i=0, l=paragraphs.length; i < l; i++) {
+        for (i = 0, l = paragraphs.length; i < l; i++) {
             html += '<p>' +
-                ( paragraphs[i].split(this._newLine).join('<br />') ) +
+                (paragraphs[i].split(this._newLine).join('<br />')) +
                 '</p>';
         }
 

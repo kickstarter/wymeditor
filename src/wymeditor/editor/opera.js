@@ -17,21 +17,21 @@
  *        Jean-Francois Hovinne (jf.hovinne a-t wymeditor dotorg)
  */
 
-WYMeditor.WymClassOpera = function(wym) {
+WYMeditor.WymClassOpera = function (wym) {
     this._wym = wym;
     this._class = "class";
     this._newLine = "\r\n";
 };
 
-WYMeditor.WymClassOpera.prototype.initIframe = function(iframe) {
+WYMeditor.WymClassOpera.prototype.initIframe = function (iframe) {
     this._iframe = iframe;
     this._doc = iframe.contentWindow.document;
     
     jQuery(this._element).trigger('wymeditor:iframe_loaded');
     
     //add css rules from options
-    var styles = this._doc.styleSheets[0];
-    var aCss = eval(this._options.editorStyles);
+    var styles = this._doc.styleSheets[0],
+        aCss = eval(this._options.editorStyles);
 
     this.addCssRules(this._doc, aCss);
 
@@ -69,7 +69,7 @@ WYMeditor.WymClassOpera.prototype.initIframe = function(iframe) {
     this.listen();
 };
 
-WYMeditor.WymClassOpera.prototype._exec = function(cmd, param) {
+WYMeditor.WymClassOpera.prototype._exec = function (cmd, param) {
     if (param) {
         this._doc.execCommand(cmd, false, param);
     }
@@ -78,33 +78,33 @@ WYMeditor.WymClassOpera.prototype._exec = function(cmd, param) {
     }
 };
 
-WYMeditor.WymClassOpera.prototype.addCssRule = function(styles, oCss) {
+WYMeditor.WymClassOpera.prototype.addCssRule = function (styles, oCss) {
     styles.insertRule(
             oCss.name + " {" + oCss.css + "}", styles.cssRules.length);
 };
 
-WYMeditor.WymClassOpera.prototype.keydown = function(evt) {
+WYMeditor.WymClassOpera.prototype.keydown = function (evt) {
     //'this' is the doc
-    var wym = WYMeditor.INSTANCES[this.title];
-    var sel = wym._iframe.contentWindow.getSelection();
-    startNode = sel.getRangeAt(0).startContainer;
+    var wym = WYMeditor.INSTANCES[this.title],
+        sel = wym._iframe.contentWindow.getSelection(),
+        startNode = sel.getRangeAt(0).startContainer;
 
     //Get a P instead of no container
     if (!jQuery(startNode).parentsOrSelf(WYMeditor.MAIN_CONTAINERS.join(","))[0] &&
             !jQuery(startNode).parentsOrSelf('li') &&
-            evt.keyCode != WYMeditor.KEY.ENTER &&
-            evt.keyCode != WYMeditor.KEY.LEFT &&
-            evt.keyCode != WYMeditor.KEY.UP &&
-            evt.keyCode != WYMeditor.KEY.RIGHT &&
-            evt.keyCode != WYMeditor.KEY.DOWN &&
-            evt.keyCode != WYMeditor.KEY.BACKSPACE &&
-            evt.keyCode != WYMeditor.KEY.DELETE) {
+            evt.keyCode !== WYMeditor.KEY.ENTER &&
+            evt.keyCode !== WYMeditor.KEY.LEFT &&
+            evt.keyCode !== WYMeditor.KEY.UP &&
+            evt.keyCode !== WYMeditor.KEY.RIGHT &&
+            evt.keyCode !== WYMeditor.KEY.DOWN &&
+            evt.keyCode !== WYMeditor.KEY.BACKSPACE &&
+            evt.keyCode !== WYMeditor.KEY.DELETE) {
 
         wym._exec(WYMeditor.FORMAT_BLOCK, WYMeditor.P);
     }
 };
 
-WYMeditor.WymClassOpera.prototype.keyup = function(evt) {
+WYMeditor.WymClassOpera.prototype.keyup = function (evt) {
     //'this' is the doc
     var wym = WYMeditor.INSTANCES[this.title];
     wym._selected_image = null;
