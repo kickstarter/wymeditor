@@ -76,7 +76,7 @@ WYMeditor.WymClassExplorer.prototype.initIframe = function (iframe) {
 
     /* this doesn't work for me.
      * TODO: look into it later :-)
-    
+
     this._doc.body.onbeforepaste = function() {
         wym._iframe.contentWindow.event.returnValue = false;
     };
@@ -117,7 +117,7 @@ WYMeditor.WymClassExplorer.prototype.initIframe = function (iframe) {
         // Is this really needed, it trigger an unexisting property on IE6
         this._doc = iframe.contentWindow.document;
     } catch (e) {}
-    
+
     jQuery(this._element).trigger('wymeditor:iframe_loaded');
 };
 
@@ -256,7 +256,7 @@ WYMeditor.WymClassExplorer.prototype.keyup = function (evt) {
             !evt.ctrlKey) { // Not BACKSPACE, DELETE, CTRL, or COMMAND key
 
         container = wym.selected();
-        if (container !== null) {
+        if (container && container.tagName) {
             name = container.tagName.toLowerCase();
         }
 
