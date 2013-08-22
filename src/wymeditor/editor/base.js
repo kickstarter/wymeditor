@@ -2548,7 +2548,7 @@ WYMeditor.editor.prototype.listen = function () {
     // because of MSIE + jQuery + expando issue (#JQ1143)
 
     jQuery(this._doc.body).bind("mouseup keyup change", function (e) {
-        _this.update_selections.apply(_this, [ e ]);
+        wym.update_selections.apply(wym, [ e ]);
     });
     jQuery(this._doc.body).bind("mousedown", function (e) {
         wym.mousedown(e);
