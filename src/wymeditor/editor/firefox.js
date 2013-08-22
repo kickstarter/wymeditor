@@ -89,7 +89,7 @@ WYMeditor.WymClassMozilla.prototype.initIframe = function (iframe) {
 
     //add event listeners to doc elements, e.g. images
     this.listen();
-    
+
     jQuery(this._element).trigger('wymeditor:iframe_loaded');
 };
 
@@ -137,7 +137,7 @@ WYMeditor.WymClassMozilla.prototype._exec = function (cmd, param) {
 
     //set to P if parent = BODY
     var container = this.selected();
-    if (container.tagName.toLowerCase() === WYMeditor.BODY) {
+    if (container && (container.tagName.toLowerCase() === WYMeditor.BODY)) {
         this._exec(WYMeditor.FORMAT_BLOCK, WYMeditor.P);
     }
 
@@ -206,7 +206,7 @@ WYMeditor.WymClassMozilla.prototype.keyup = function (evt) {
             !evt.ctrlKey) { // Not BACKSPACE, DELETE, CTRL, or COMMAND key
 
         container = wym.selected();
-        name = container.tagName.toLowerCase();
+        name = container ? container.tagName.toLowerCase() : 'body';
 
         //fix forbidden main containers
         if (name === "strong" ||

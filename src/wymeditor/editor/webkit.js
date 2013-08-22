@@ -69,7 +69,7 @@ WYMeditor.WymClassSafari.prototype.initIframe = function (iframe) {
 
     //add event listeners to doc elements, e.g. images
     this.listen();
-    
+
     jQuery(this._element).trigger('wymeditor:iframe_loaded');
 };
 
@@ -176,7 +176,7 @@ WYMeditor.WymClassSafari.prototype.keyup = function (evt) {
             !evt.ctrlKey) {// Not BACKSPACE, DELETE, CTRL, or COMMAND key
 
         container = wym.selected();
-        name = container.tagName.toLowerCase();
+        name = container ? container.tagName.toLowerCase() : 'body';
 
         // Fix forbidden main containers
         if (name === "strong" ||
