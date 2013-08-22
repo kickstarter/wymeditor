@@ -323,7 +323,7 @@ WYMeditor.editor.prototype.xhtml = function (update) {
     matching the designMode execCommand strategy (and falling through to
     execCommand in some cases).
 */
-WYMeditor.editor.prototype.exec = function (cmd) {
+WYMeditor.editor.prototype.exec = function (cmd, args) {
     var container, custom_run, _this = this, all_custom_commands, collapsed = true, $selected_a;
     switch (cmd) {
 
@@ -392,7 +392,7 @@ WYMeditor.editor.prototype.exec = function (cmd) {
         jQuery.each(all_custom_commands, function () {
             if (cmd === this.name) {
                 custom_run = true;
-                this.run.apply(_this);
+                this.run.apply(_this, args);
                 return false;
             }
         });
