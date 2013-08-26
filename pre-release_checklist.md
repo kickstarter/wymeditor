@@ -32,10 +32,8 @@ but should be given high priority otherwise.
 Passing Tests
 -------------
 
-All releases should have 100% passing unit tests in 100% of supported browsers.
-They should also pass all of the continuous integration criteria as defined by
-the jobs on [http://jenkins.wymeditor.org](http://jenkins.wymeditor.org), which
-means passing jslint and any other static analysis checks.
+All releases should have 100% passing unit tests in 100% of supported
+browsers for all of the supported versions of jQuery.
 
 The person doing the release is responsible for running the unit tests in all
 supported browsers before cutting a release tarball.
@@ -46,39 +44,42 @@ Update Documentation
 It's important that users can be confident that the documentation distributed
 with WYMeditor is up to date so that it can be trusted. As of December 2011, we
 have a long way to go in this area, but at the very least we need to keep the
-documenation bundled with the source accurate.
+documentation bundled with the source accurate.
 
 Checklist:
 
-* Bump the version number in `version.txt`.
+* Ensure that the version number in `package.json` is the correct
+  version for the release.
 * Ensure all changes since the last version are noted in section specifically
   for this release inside `CHANGELOG.md`. Users upgraded from a specific
   version should be able to easily see what changes might effect them.
 * If this release makes a transition from alpha to beta or beta to stable,
-  consolidate point alpha/beta `CHANGELOG.md` entries in to a unified section for
-  this release. For a major release, also flesh out highlights and examples
+  consolidate point alpha/beta `CHANGELOG.md` entries in to a unified section
+  for this release. For a major release, also flesh out highlights and examples
   that are most important.
 * Set a date for the release in `CHANGELOG.md`.
-* In the *Quick Start* section of `README.md`, update the *Version xxxx* link to
-  point to the appropriate version and the appropriate github download target.
-  The tar.gz should be named in the format `wymeditor-<version>.tar.gz`.
+* In the *Quick Start* section of `README.md`, update the step for downloading
+  the release archive to point to the appropriate release page for the current
+  version.
 * Review the `README.md` for any changes that might be necessary as a result of
   changes in this release.
 
 Build and Distribute the Archive
 ================================
 
-Any user should be able to follow the instructions in the readme to make their
+Any user should be able to follow the instructions in the README to make their
 own archive, but it's important to include an archive in a known place for ease
-of use. 
+of use.
 
 * Follow the `README.md` instructions to create the `tar.gz` archive.
-* Tag the current version in git using [Semantic Versioning](http://semver.org/) 
-  and push the tag to github.
-* Navigate to the [WYMeditor Downloads](https://github.com/wymeditor/wymeditor/downloads) 
-  page on github and upload the archive. The archive you upload should be named
-  according to the `wymeditor-<version>.tar.gz` format to ensure the appropriate
-  download URL.  
+* Tag the current version in git using [Semantic
+  Versioning](http://semver.org/) and push the tag to github.
+* Navigate to the [WYMeditor
+  Releases](https://github.com/wymeditor/wymeditor/releases) page on github and
+  draft a new release for the tag of the current version. Add the information
+  from the CHANGELOG for the current version to the release description and
+  upload the built `tar.gz` archive named according to the
+  `wymeditor-<version>.tar.gz` format.
 
 Tell the World
 ==============
@@ -86,15 +87,18 @@ Tell the World
 If a new release is cut in the forest when nobody is there, does it make a
 sound? A new release isn't much good if nobody knows about it.
 
-* Make a new sticky thread on the [WYMeditor Forums](http://community.wymeditor.org) 
+* Make a new sticky thread on the [WYMeditor Forums](http://community.wymeditor.org)
   announcing the new release with the title `Version <version> released`.
-  Highlight any major changes, link to the changelog and download and maybe
+  Highlight any major changes, link to the CHANGELOG and download and maybe
   comment on plans for the next release.
 * Un-sticky any old forum threads.
 * Tweet out the good news to [@wymeditor](http://twitter.com/wymeditor).
 * Call your mother.
 
+Prepare For the Next Release
+============================
 
-
-
+* Create a new version entry in `CHANGELOG.md`
+* Bump the version string in `package.json`
+* Bump the version string for the Sphinx documentation at `docs/conf.py`
 

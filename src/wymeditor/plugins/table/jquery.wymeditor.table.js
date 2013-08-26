@@ -384,6 +384,9 @@ TableEditor.prototype.mergeRow = function (sel) {
         nodes = nodes.concat(range.getNodes(false));
     }
 
+    // Clear the ranges in selection so that it can be moved later
+    rangy.getIframeSelection(wym._iframe).removeAllRanges();
+
     // Just use the td and th nodes
     cells = jQuery(nodes).filter('td,th');
     if (cells.length === 0) {
@@ -622,7 +625,7 @@ TableEditor.prototype.keyDown = function (evt) {
     var wym = WYMeditor.INSTANCES[this.title],
         tableEditor = wym.tableEditor;
 
-    if (evt.keyCode === WYMeditor.KEY.TAB) {
+    if (evt.which === WYMeditor.KEY.TAB) {
         return tableEditor.selectNextCell(wym.selected());
     }
 

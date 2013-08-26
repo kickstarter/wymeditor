@@ -26,9 +26,9 @@ WYMeditor.WymClassOpera = function (wym) {
 WYMeditor.WymClassOpera.prototype.initIframe = function (iframe) {
     this._iframe = iframe;
     this._doc = iframe.contentWindow.document;
-    
+
     jQuery(this._element).trigger('wymeditor:iframe_loaded');
-    
+
     //add css rules from options
     var styles = this._doc.styleSheets[0],
         aCss = eval(this._options.editorStyles);
@@ -44,7 +44,7 @@ WYMeditor.WymClassOpera.prototype.initIframe = function (iframe) {
     this._doc.body.contentEditable = "true";
 
     //init html value
-    this.html(this._wym._html);
+    this._html(this._wym._options.html);
 
     //pre-bind functions
     if (jQuery.isFunction(this._options.preBind)) {
@@ -78,7 +78,21 @@ WYMeditor.WymClassOpera.prototype._exec = function (cmd, param) {
     }
 };
 
-WYMeditor.WymClassOpera.prototype.addCssRule = function (styles, oCss) {
+WYMeditor.WymClassOpera.prototype.selected = function() {
+    var sel = this._iframe.contentWindow.getSelection();
+    var node = sel.focusNode;
+    if (node) {
+        if (node.nodeName === "#text") {
+            return node.parentNode;
+        } else {
+            return node;
+        }
+    } else {
+        return null;
+    }
+};
+
+WYMeditor.WymClassOpera.prototype.addCssRule = function(styles, oCss) {
     styles.insertRule(
             oCss.name + " {" + oCss.css + "}", styles.cssRules.length);
 };
@@ -92,13 +106,7 @@ WYMeditor.WymClassOpera.prototype.keydown = function (evt) {
     //Get a P instead of no container
     if (!jQuery(startNode).parentsOrSelf(WYMeditor.MAIN_CONTAINERS.join(","))[0] &&
             !jQuery(startNode).parentsOrSelf('li') &&
-            evt.keyCode !== WYMeditor.KEY.ENTER &&
-            evt.keyCode !== WYMeditor.KEY.LEFT &&
-            evt.keyCode !== WYMeditor.KEY.UP &&
-            evt.keyCode !== WYMeditor.KEY.RIGHT &&
-            evt.keyCode !== WYMeditor.KEY.DOWN &&
-            evt.keyCode !== WYMeditor.KEY.BACKSPACE &&
-            evt.keyCode !== WYMeditor.KEY.DELETE) {
+            !keyCanCreateBlockElement(evt.which)) {
 
         wym._exec(WYMeditor.FORMAT_BLOCK, WYMeditor.P);
     }

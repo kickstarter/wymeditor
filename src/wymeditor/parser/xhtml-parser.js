@@ -28,6 +28,7 @@ WYMeditor.XhtmlParser.prototype.beforeParsing = function(raw) {
         // Usefull for cleaning up content pasted from other sources (MSWord)
         this._Listener.avoidStylingTagsAndAttributes();
     }
+
     return this._Listener.beforeParsing(raw);
 };
 
@@ -89,6 +90,12 @@ WYMeditor.XhtmlParser.prototype._addNonTagBlock = function(match, state, type) {
     return true;
 };
 
+WYMeditor.XhtmlParser.prototype.SelfClosingTag = function(match, state) {
+    var result = this.OpeningTag(match, state);
+    var tag = this.normalizeTag(match);
+    return this.ClosingTag(match, state);
+};
+
 WYMeditor.XhtmlParser.prototype.OpeningTag = function(match, state) {
     switch (state){
         case WYMeditor.LEXER_ENTER:
@@ -140,16 +147,25 @@ WYMeditor.XhtmlParser.prototype._callCloseTagListener = function(tag) {
             var expected_tag = this._Listener._tag_stack.pop();
             if (expected_tag === false) {
                 return;
-            } else if (expected_tag != tag) {
+            } else if (expected_tag !== tag) {
+                // If we are expecting extra block closing tags, put the
+                // expected tag back on the tag stack.
+                if (this._Listener._extraBlockClosingTags) {
+                    this._Listener._tag_stack.push(expected_tag);
+                    this._Listener.removedExtraBlockClosingTag();
+                    return;
+                }
+
                 tag = expected_tag;
             }
             this._Listener.closeBlockTag(tag);
-        } else {
-            this._Listener.closeUnknownTag(tag);
         }
     } else {
-        this._Listener.closeUnopenedTag(tag);
+        if(!this._Listener.isInlineTag(tag)) {
+            this._Listener.closeUnopenedTag(tag);
+        }
     }
+
     this._Listener.last_tag = tag;
     this._Listener.last_tag_opened = false;
 };

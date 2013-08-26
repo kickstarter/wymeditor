@@ -5,6 +5,22 @@ var pr_lt = /</g;
 var pr_gt = />/g;
 var pr_quot = /\"/g;
 
+// Attributes that should be ignored when normalizing HTML for comparison
+// across browsers. The variable is an array of arrays where each array should
+// have the name of the attribute to be ignored as the first element. The
+// second element in each array should be an array of values that specifies
+// that the attribute will only be ignored if it is one of those values. If
+// this second element is not provided, it will always ignore the attribute no
+// matter what the attribute's value is.
+var ignoreAttributes = [
+                        ['_moz_editor_bogus_node'],
+                        ['_moz_dirty'],
+                        ['_wym_visited'],
+                        ['sizset'],
+                        ['tabindex'],
+                        ['rowspan', ['1']]
+                       ];
+
 /**
 * Escape html special characters.
 */
@@ -36,7 +52,25 @@ function normalizeHtml(node) {
         n,
         child,
         sortedAttrs,
-        i;
+        attrName,
+        attrValue,
+        keepAttr,
+        i,
+        j,
+        $captions;
+
+    if (jQuery.browser.msie) {
+        $captions = jQuery(node).find('caption');
+        if ($captions.length) {
+            // Some versions of IE can unexpectedly add the caption of a table
+            // after the table body. This ensures the table caption is always
+            // at the start.
+            $captions.each(function () {
+                jQuery(this).prependTo(jQuery(this).parent());
+            });
+        }
+    }
+
     switch (node.nodeType) {
     case 1:  // an element
         name = node.tagName.toLowerCase();
@@ -49,8 +83,39 @@ function normalizeHtml(node) {
             sortedAttrs = [];
             for (i = n; --i >= 0;) {
                 attr = attrs[i];
-                if (attr.specified) {
-                    // We only care about specified attributes
+                attrName = attr.nodeName.toLowerCase();
+                attrValue = attr.nodeValue;
+                keepAttr = true;
+
+                // We only care about specified attributes
+                if (!attr.specified) {
+                    keepAttr = false;
+                }
+
+                // Ignore attributes that are only used in specific browsers.
+                for (j = 0; j < ignoreAttributes.length; ++j) {
+                    if (attrName === ignoreAttributes[j][0]) {
+                        if (!ignoreAttributes[j][1] ||
+                            jQuery.inArray(attrValue,
+                                           ignoreAttributes[j][1]) > -1) {
+
+                                keepAttr = false;
+                                break;
+                        }
+                    }
+
+                    // With some versions of jQuery on IE, sometimes attributes
+                    // named `sizcache` or `sizzle-` followed by a differing
+                    // string of numbers are added to elements, so regex must
+                    // be used to check for them.
+                    if (/sizcache\d*/.test(attrName) ||
+                        /sizzle-\d*/.test(attrName)) {
+                        keepAttr = false;
+                        break;
+                    }
+                }
+
+                if (keepAttr) {
                     sortedAttrs.push(attr);
                 }
             }
@@ -65,7 +130,13 @@ function normalizeHtml(node) {
                     '="' + attribToHtml(attr.value) + '"';
             }
         }
-        html += '>';
+        if (name === "br" || name === "img" || name === "link") {
+            // close self-closing element
+            html += '/>';
+        } else {
+            html += '>';
+        }
+
         for (child = node.firstChild; child; child = child.nextSibling) {
             html += normalizeHtml(child);
         }
@@ -86,11 +157,19 @@ function normalizeHtml(node) {
 /**
 * Ensure the cleaned xhtml coming from a WYMeditor instance matches the
 * expected HTML, accounting for differing whitespace and attribute ordering.
+*
+* assertionString is the string message printed with the result of the
+* assertion checking this matching. This parameter is optional.
+*
+* fixListSpacing is a boolean that specifies if leading spaces before line
+* breaks and list type elements should be removed in older versions of Internet
+* Explorer (i.e. IE7-8). This paramater is optional.
 */
-function htmlEquals(wymeditor, expected) {
+function htmlEquals(wymeditor, expected, assertionString, fixListSpacing) {
     var xhtml = '',
         normedActual = '',
         normedExpected = '',
+        listTypeOptions,
         tmpNodes,
         i;
     xhtml = jQuery.trim(wymeditor.xhtml());
@@ -98,20 +177,32 @@ function htmlEquals(wymeditor, expected) {
         // In jQuery 1.2.x, jQuery('') returns an empty list, so we can't call
         // normalizeHTML. On 1.3.x or higher upgrade, we can remove this
         // check for the empty string
-        equals(xhtml, expected);
+        deepEqual(xhtml, expected, assertionString);
         return;
     }
 
     tmpNodes = jQuery(xhtml, wymeditor._doc);
+
     for (i = 0; i < tmpNodes.length; i++) {
         normedActual += normalizeHtml(tmpNodes[i]);
     }
+    if (fixListSpacing && jQuery.browser.msie &&
+            parseInt(jQuery.browser.version) < 9.0) {
+        normedActual = normedActual.replace(/\s(<br.*?\/>)/g, '$1')
+
+        listTypeOptions = WYMeditor.LIST_TYPE_ELEMENTS.join('|');
+        normedActual = normedActual.replace(
+            new RegExp('\\s(<(' + listTypeOptions + ').*?>)', 'g'),
+            '$1'
+        );
+    }
+
     tmpNodes = jQuery(expected, wymeditor._doc);
     for (i = 0; i < tmpNodes.length; i++) {
         normedExpected += normalizeHtml(tmpNodes[i]);
     }
 
-    equals(normedActual, normedExpected);
+    deepEqual(normedActual, normedExpected, assertionString);
 }
 
 function makeSelection(wymeditor, startElement, endElement, startElementIndex, endElementIndex) {
@@ -119,7 +210,11 @@ function makeSelection(wymeditor, startElement, endElement, startElementIndex, e
         startElementIndex = 0;
     }
     if (typeof endElementIndex === 'undefined') {
-        endElementIndex = 0;
+        // IE8+ has some trouble selecting a node without selecting any content
+        // from that node. This is really kind of a hack, as the other browsers
+        // handle selecting the 0-index of the endElement with no trouble. This
+        // might be something that rangy can handle.
+        endElementIndex = 1;
     }
     var sel = rangy.getIframeSelection(wymeditor._iframe),
         range = rangy.createRange(wymeditor._doc);
@@ -191,7 +286,7 @@ function moveSelector(wymeditor, selectedElement) {
         makeSelection(wymeditor, selectedElement, selectedElement, 0, 0);
     }
 
-    equals(wymeditor.selected(), selectedElement, "moveSelector");
+    deepEqual(wymeditor.selected(), selectedElement, "moveSelector");
 }
 
 
@@ -213,21 +308,21 @@ function simulateKey(keyCode, targetElement, options) {
 
     keydown = jQuery.Event('keydown');
 
-    keydown.keyCode = keyCode;
+    keydown.which = keyCode;
     keydown.metaKey = options.metaKey;
     keydown.ctrlKey = options.ctrlKey;
     keydown.shiftKey = options.shiftKey;
     keydown.altKey = options.altKey;
 
     keypress = jQuery.Event('keypress');
-    keypress.keyCode = keyCode;
+    keypress.which = keyCode;
     keydown.metaKey = options.metaKey;
     keydown.ctrlKey = options.ctrlKey;
     keydown.shiftKey = options.shiftKey;
     keydown.altKey = options.altKey;
 
     keyup = jQuery.Event('keyup');
-    keyup.keyCode = keyCode;
+    keyup.which = keyCode;
     keydown.metaKey = options.metaKey;
     keydown.ctrlKey = options.ctrlKey;
     keydown.shiftKey = options.shiftKey;

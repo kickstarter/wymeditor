@@ -1,0 +1,49 @@
+{
+  "name": "wymeditor",
+  "description": "Pure js cross-browser WYSIWYM editor with a focus on the clean separation of content and styling.",
+  "version": "1.0.0-b6",
+  "homepage": "http://wymeditor.github.io/wymeditor/",
+  "repository": [
+    {
+      "type": "git",
+      "url": "https://github.com/wymeditor/wymeditor.git"
+    }
+  ],
+  "maintainers": [
+    {
+      "name": "Wes Winham",
+      "email": "winhamwr@gmail.com",
+      "url": "http://www.policystat.com"
+    },
+    {
+      "name": "Jonatan Lundin",
+      "email": "jonatan.lundin@gmail.com"
+    }
+  ],
+  "author": {
+    "name": "Jean-Francois Hovinne",
+    "email": "jf.hovinne@wymeditor.org"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://mit-license.org/"
+    },
+    {
+      "type": "GPLv2",
+      "url": "http://opensource.org/licenses/gpl-2.0.php"
+    }
+  ],
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-contrib": "~0.7.0",
+    "grunt-replace": "~0.4.4"
+  },
+  "keywords": [
+    "wysiwyg",
+    "editor"
+  ],
+  "bugs": {
+    "url": "http://github.com/wymeditor/wymeditor/issues"
+  }
+}

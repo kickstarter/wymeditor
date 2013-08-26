@@ -46,7 +46,7 @@ WYMeditor.WymClassSafari.prototype.initIframe = function (iframe) {
     this._doc.body.contentEditable = "true";
 
     //init html value
-    this.html(this._wym._html);
+    this._html(this._wym._options.html);
 
     //pre-bind functions
     if (jQuery.isFunction(this._options.preBind)) {
@@ -78,27 +78,9 @@ WYMeditor.WymClassSafari.prototype._exec = function (cmd, param) {
         return false;
     }
 
-    var focusNode = this.selected(),
-        _param, container, attr,
-        i;
-
-    // DIV insert detection (causes problems)
-    if (cmd.toLowerCase() === WYMeditor.INSERT_HTML.toLowerCase()) {
-        _param = jQuery(param);
-
-        if (_param.is('div')) {
-            attr = _param.get(0).attributes;
-            // replace default block with DIV
-            this._doc.execCommand(WYMeditor.FORMAT_BLOCK, '', WYMeditor.DIV);
-            // copy attributes
-            container = this.selected();
-            for (i = 0; i < attr.length; i++) {
-                container.setAttribute(attr[i].name, attr[i].value);
-            }
-
-            param = _param.html();
-        }
-    }
+    var container,
+        $container,
+        tagName;
 
     if (param) {
         this._doc.execCommand(cmd, '', param);
@@ -106,10 +88,38 @@ WYMeditor.WymClassSafari.prototype._exec = function (cmd, param) {
         this._doc.execCommand(cmd, '', null);
     }
 
-    // Wrap this content in a paragraph tag if we're in the body
     container = this.selected();
-    if (container && container.tagName.toLowerCase() === WYMeditor.BODY) {
-        this._exec(WYMeditor.FORMAT_BLOCK, WYMeditor.P);
+    if (container) {
+        $container = jQuery(container);
+        tagName = container.tagName.toLowerCase();
+
+        // Wrap this content in the default root container if we're in the body
+        if (tagName === WYMeditor.BODY) {
+            this._exec(WYMeditor.FORMAT_BLOCK,
+                       this.documentStructureManager.structureRules.defaultRootContainer);
+            this.fixBodyHtml();
+        }
+
+        // If the cmd was FORMAT_BLOCK, check if the block was moved outside
+        // the body after running the command. If it was moved outside, move it
+        // back inside the body. This was added because running FORMAT_BLOCK on
+        // an image inserted outside of a container was causing it to be moved
+        // outside the body (See issue #400).
+        if (cmd === WYMeditor.FORMAT_BLOCK &&
+            $container.siblings('body.wym_iframe').length) {
+
+            $container.siblings('body.wym_iframe').append(container);
+        }
+
+        // If the container is a span, strip it out if it doesn't have a class
+        // but has an inline style of 'font-weight: normal;'.
+        if (tagName === 'span' &&
+            (!$container.attr('class') ||
+                $container.attr('class').toLowerCase() === 'apple-style-span') &&
+            $container.attr('style') === 'font-weight: normal;') {
+
+            $container.contents().unwrap();
+        }
     }
 
     return true;
@@ -127,17 +137,17 @@ WYMeditor.WymClassSafari.prototype.keydown = function (e) {
     var wym = WYMeditor.INSTANCES[this.title];
 
     if (e.ctrlKey) {
-        if (e.keyCode === WYMeditor.KEY.B) {
+        if (e.which === WYMeditor.KEY.B) {
             //CTRL+b => STRONG
             wym._exec(WYMeditor.BOLD);
             e.preventDefault();
         }
-        if (e.keyCode === WYMeditor.KEY.I) {
+        if (e.which === WYMeditor.KEY.I) {
             //CTRL+i => EMPHASIS
             wym._exec(WYMeditor.ITALIC);
             e.preventDefault();
         }
-    } else if (e.shiftKey && e.keyCode === WYMeditor.KEY.ENTER) {
+    } else if (e.shiftKey && e.which === WYMeditor.KEY.ENTER) {
         // Safari 4 and earlier would show a proper linebreak in the editor and
         // then strip it upon save with the default action in the case of inserting
         // a new line after bold text
@@ -151,104 +161,75 @@ WYMeditor.WymClassSafari.prototype.keyup = function (evt) {
     //'this' is the doc
     var wym = WYMeditor.INSTANCES[this.title],
         container,
-        name;
+        defaultRootContainer,
+        notValidRootContainers,
+        name,
+        parentName;
 
+    notValidRootContainers =
+        wym.documentStructureManager.structureRules.notValidRootContainers;
+    defaultRootContainer =
+        wym.documentStructureManager.structureRules.defaultRootContainer;
     wym._selected_image = null;
 
     // Fix to allow shift + return to insert a line break in older safari
     if (jQuery.browser.version < 534.1) {
         // Not needed in AT MAX chrome 6.0. Probably safe earlier
-        if (evt.keyCode === WYMeditor.KEY.ENTER && evt.shiftKey) {
+        if (evt.which === WYMeditor.KEY.ENTER && evt.shiftKey) {
             wym._exec('InsertLineBreak');
         }
     }
 
-    if (evt.keyCode !== WYMeditor.KEY.BACKSPACE &&
-            evt.keyCode !== WYMeditor.KEY.CTRL &&
-            evt.keyCode !== WYMeditor.KEY.DELETE &&
-            evt.keyCode !== WYMeditor.KEY.COMMAND &&
-            evt.keyCode !== WYMeditor.KEY.UP &&
-            evt.keyCode !== WYMeditor.KEY.DOWN &&
-            evt.keyCode !== WYMeditor.KEY.LEFT &&
-            evt.keyCode !== WYMeditor.KEY.RIGHT &&
-            evt.keyCode !== WYMeditor.KEY.ENTER &&
+    // If the inputted key cannont create a block element and is not a command,
+    // check to make sure the selection is properly wrapped in a container
+    if (!wym.keyCanCreateBlockElement(evt.which) &&
+            evt.which !== WYMeditor.KEY.CTRL &&
+            evt.which !== WYMeditor.KEY.COMMAND &&
             !evt.metaKey &&
-            !evt.ctrlKey) {// Not BACKSPACE, DELETE, CTRL, or COMMAND key
+            !evt.ctrlKey) {
 
         container = wym.selected();
         name = container ? container.tagName.toLowerCase() : 'body';
-
-        // Fix forbidden main containers
-        if (name === "strong" ||
-                name === "b" ||
-                name === "em" ||
-                name === "i" ||
-                name === "sub" ||
-                name === "sup" ||
-                name === "a" ||
-                name === "span") {
-            // Webkit tries to use spans as a main container
-
-            name = container.parentNode.tagName.toLowerCase();
+        if (container.parentNode) {
+            parentName = container.parentNode.tagName.toLowerCase();
         }
 
-        if (name === WYMeditor.BODY) {
-            // Replace text nodes with <p> tags
-            wym._exec(WYMeditor.FORMAT_BLOCK, WYMeditor.P);
+        // Fix forbidden main containers
+        if (wym.isForbiddenMainContainer(name)) {
+            name = parentName;
+        }
+
+        // Replace text nodes with default root tags and make sure the
+        // container is valid if it is a root container
+        if (name === WYMeditor.BODY ||
+                (jQuery.inArray(name, notValidRootContainers) > -1 &&
+                parentName === WYMeditor.BODY)) {
+
+            wym._exec(WYMeditor.FORMAT_BLOCK, defaultRootContainer);
             wym.fixBodyHtml();
         }
 
         $(wym._element).trigger('wymeditor:doc_html_updated', [wym, $(wym._doc.body).html()]);
     }
 
-    // If we potentially created a new block level element or moved to a new one
-    // then we should ensure that they're in the proper format
-    if (evt.keyCode === WYMeditor.KEY.UP ||
-            evt.keyCode === WYMeditor.KEY.DOWN ||
-            evt.keyCode === WYMeditor.KEY.LEFT ||
-            evt.keyCode === WYMeditor.KEY.RIGHT ||
-            evt.keyCode === WYMeditor.KEY.BACKSPACE ||
-            evt.keyCode === WYMeditor.KEY.ENTER) {
+    // If we potentially created a new block level element or moved to a new
+    // one, then we should ensure the container is valid and the formatting is
+    // proper.
+    if (wym.keyCanCreateBlockElement(evt.which)) {
+        // If the selected container is a root container, make sure it is not a
+        // different possible default root container than the chosen one.
+        container = wym.selected();
+        name = container.tagName.toLowerCase();
+        if (container.parentNode) {
+            parentName = container.parentNode.tagName.toLowerCase();
+        }
+        if (jQuery.inArray(name, notValidRootContainers) > -1 &&
+                parentName === WYMeditor.BODY) {
+            wym._exec(WYMeditor.FORMAT_BLOCK, defaultRootContainer);
+        }
+
+        // Fix formatting if necessary
         wym.fixBodyHtml();
     }
 };
 
-WYMeditor.WymClassSafari.prototype.openBlockTag = function (tag, attributes) {
-    var new_tag;
-    attributes = this.validator.getValidTagAttributes(tag, attributes);
-
-    // Handle Safari styled spans
-    if (tag === 'span' && attributes.style) {
-        new_tag = this.getTagForStyle(attributes.style);
-        if (new_tag) {
-            tag = new_tag;
-            this._tag_stack.pop();
-            this._tag_stack.push(tag);
-            attributes.style = '';
-
-            // Should fix #125 - also removed the xhtml() override
-            if (typeof attributes['class'] === 'string') {
-                attributes['class'] = attributes['class'].replace(
-                    /apple-style-span/gi,
-                    ''
-                );
-            }
-        }
-    }
-
-    this.output += this.helper.tag(tag, attributes, true);
-};
-
-WYMeditor.WymClassSafari.prototype.getTagForStyle = function (style) {
-    if (/bold/.test(style)) {
-        return 'strong';
-    } else if (/italic/.test(style)) {
-        return 'em';
-    } else if (/sub/.test(style)) {
-        return 'sub';
-    } else if (/super/.test(style)) {
-        return 'sup';
-    }
-
-    return false;
-};

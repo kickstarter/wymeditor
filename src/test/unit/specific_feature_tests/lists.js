@@ -22,7 +22,7 @@ function testList(elmntId, action, startHtml, expectedHtml, isText, doSelection)
     }
 
     if (doSelection) {
-        wymeditor.html(startHtml);
+        wymeditor._html(startHtml);
         $body = jQuery(wymeditor._doc).find('body.wym_iframe');
         actionLi = $body.find('#' + elmntId)[0];
 
@@ -134,7 +134,7 @@ function testListMulti(startElmntId, endElmntId, action, startHtml, expectedHtml
         endLi,
         buttonSelector,
         actionButton;
-    wymeditor.html(startHtml);
+    wymeditor._html(startHtml);
 
     $body = jQuery(wymeditor._doc).find('body.wym_iframe');
     startLi = $body.find('#' + startElmntId)[0];
@@ -806,26 +806,32 @@ var li_1_2_outdentedNodeContentAfterSublistHtml = String() +
             '</li>' +
             '<li id="li_2">2</li>' +
         '</ol>';
-test("Content after sublist node indent/outdent", function () {
-    expect(3);
 
-    // Not round-trippable
-    testList(
-        'li_1_2',
-        'outdent',
-        nodeContentAfterSublistHtml,
-        li_1_2_outdentedNodeContentAfterSublistHtml
-    );
+// This test doesn't pass in older versions of IE because they add an extra
+// space onto the end of an `li` element's text content. The functionality
+// tested still works in those older IE versions.
+if (!jQuery.browser.msie || !SKIP_KNOWN_FAILING_TESTS) {
+    test("Content after sublist node indent/outdent", function () {
+        expect(3);
 
-    // Via Text selection
-    testList(
-        'li_1_2',
-        'outdent',
-        nodeContentAfterSublistHtml,
-        li_1_2_outdentedNodeContentAfterSublistHtml,
-        true
-    );
-});
+        // Not round-trippable
+        testList(
+            'li_1_2',
+            'outdent',
+            nodeContentAfterSublistHtml,
+            li_1_2_outdentedNodeContentAfterSublistHtml
+        );
+
+        // Via Text selection
+        testList(
+            'li_1_2',
+            'outdent',
+            nodeContentAfterSublistHtml,
+            li_1_2_outdentedNodeContentAfterSublistHtml,
+            true
+        );
+    });
+}
 
 var spanInSublistHtml = String() +
         '<ol>' +
@@ -1117,7 +1123,7 @@ test("Invalid nesting correction no spacer", function () {
         startHtml = invalidNestingHtml,
         expectedHtml = invalidNestingCorrectedHtml;
 
-    wymeditor.html(startHtml);
+    wymeditor._html(startHtml);
     $body = jQuery(wymeditor._doc).find('body.wym_iframe');
     actionLi = $body.find('#li_4')[0];
 
@@ -1133,7 +1139,7 @@ test("Invalid nesting correction requiring spacer", function () {
         startHtml = invalidNestingNoPreviousHtml,
         expectedHtml = invalidNestingNoPreviousCorrectedHtml;
 
-    wymeditor.html(startHtml);
+    wymeditor._html(startHtml);
     $body = jQuery(wymeditor._doc).find('body.wym_iframe');
     actionLi = $body.find('#li_2_2')[0];
 
@@ -1362,7 +1368,7 @@ orphanedLiHtml.ordered.li_new = String() +
 // test data to expect this so that we pass in IE
 // TODO: Maybe use some kind of modernizr-style test and correct this with the
 // parser?
-if (jQuery.browser.msie) {
+if (jQuery.browser.msie && parseInt(jQuery.browser.version, 10) < 9.0) {
     orphanedLiHtml.ordered.li_new = orphanedLiHtml.ordered.li_new.replace(
         /text<li id=\"li_text_sep/g,
         'text <li id="li_text_sep'
@@ -1642,6 +1648,18 @@ var li_2_to_li_3_subnodeIndentedHtml = String() +
             '</li>' +
         '</ol>';
 
+var listsWithContentBetweenHtml = String() +
+    '<ol>' +
+        '<li id="li_1">1</li>' +
+        '<li id="li_2">2</li>' +
+        '<li id="li_3">3</li>' +
+    '</ol>' +
+    '<p>Content</p>' +
+    '<ul>' +
+        '<li id="li_4">4</li>' +
+        '<li id="li_5">5</li>' +
+        '<li id="li_6">6</li>' +
+    '</ul>' +
 
 test("Second-level with sub-node", function () {
     expect(4);
@@ -1701,6 +1719,15 @@ test("Second-level with mixed lists and down a level", function () {
     // Via text selection
     testListMulti('li_5_3', 'li_5_4', 'indent', nestedListHtml, li_5_3_to_li_5_4_indentedHtml, true);
     testListMulti('li_5_3', 'li_5_4', 'outdent', li_5_3_to_li_5_4_indentedHtml, nestedListHtml, true);
+});
+
+test("Selecting multiple lists with content between prevents indent/outdent", function () {
+    expect(2);
+
+    testListMulti('li_2', 'li_5', 'indent', listsWithContentBetweenHtml,
+                  listsWithContentBetweenHtml, true);
+    testListMulti('li_2', 'li_5', 'outdent', listsWithContentBetweenHtml,
+                  listsWithContentBetweenHtml, true);
 });
 
 module("list-broken_html", {setup: setupWym});
@@ -1903,6 +1930,21 @@ test("Ordered to unordered one item", function () {
     testListRoundTrip('li_1_1_1_1', 'ordered', li_1_1_1_1_unorderedHtml, orderedHtml, true);
 });
 
+test("Prevent converting type with selection over multiple levels", function () {
+    expect(4);
+
+    testListMulti('li_1_1_1', 'li_1_1_1_1', 'unordered',
+                  li_1_1_1_unorderedHtml, li_1_1_1_unorderedHtml);
+    testListMulti('li_1_1_1', 'li_1_1_1_1', 'ordered',
+                  li_1_1_1_unorderedHtml, li_1_1_1_unorderedHtml);
+
+    // With text selection
+    testListMulti('li_1_1_1', 'li_1_1_1_1', 'unordered',
+                  li_1_1_1_unorderedHtml, li_1_1_1_unorderedHtml, true);
+    testListMulti('li_1_1_1', 'li_1_1_1_1', 'ordered',
+                  li_1_1_1_unorderedHtml, li_1_1_1_unorderedHtml, true);
+});
+
 module("list-conversion_blocks", {setup: setupWym});
 var pHtml = String() +
         '<p id="p_1">content 1</p>' +
@@ -2031,12 +2073,12 @@ test("Should correct invalid list nesting", function () {
     // FF
         invalid_ff_html = "<ul><li>a<\/li><ul><li>a.1<\/li><\/ul><li>b<br><\/li><\/ul>",
         invalid_ie_html = "<UL>\r\n<LI>a<\/LI>\r\n<UL>\r\n<LI>a.1<\/LI><\/UL>\r\n<LI>b<\/LI><\/UL>";
-    wymeditor.html(invalid_ff_html);
+    wymeditor._html(invalid_ff_html);
     htmlEquals(wymeditor, expected);
     // IE
     // IE has invalid sublist nesting
     expected = "<ul>\r\n<li>a<ul>\r\n<li>a.1<\/li><\/ul><\/li>\r\n<li>b<\/li><\/ul>";
-    wymeditor.html(invalid_ie_html);
+    wymeditor._html(invalid_ie_html);
     htmlEquals(wymeditor, expected);
 });
 
@@ -2067,7 +2109,7 @@ test("Double indent correction", function () {
                 '</li>' +
             '</ol>';
 
-    wymeditor.html(brokenHtml);
+    wymeditor._html(brokenHtml);
     htmlEquals(wymeditor, repairedHtml);
 });
 
@@ -2083,7 +2125,7 @@ test("Tab key indents", function () {
         actionElement,
 
         wymeditor = jQuery.wymeditors(0);
-    wymeditor.html(initHtml);
+    wymeditor._html(initHtml);
 
     $body = jQuery(wymeditor._doc).find('body.wym_iframe');
     actionElement = $body.find('#' + elmntId)[0];
@@ -2117,7 +2159,7 @@ test("Shift+Tab outdents", function () {
         actionElement,
 
         wymeditor = jQuery.wymeditors(0);
-    wymeditor.html(initHtml);
+    wymeditor._html(initHtml);
 
     $body = jQuery(wymeditor._doc).find('body.wym_iframe');
     actionElement = $body.find('#' + elmntId)[0];
@@ -2138,7 +2180,7 @@ test("Tab has no effect outside lists", function () {
         actionElement,
 
         wymeditor = jQuery.wymeditors(0);
-    wymeditor.html(initHtml);
+    wymeditor._html(initHtml);
 
     $body = jQuery(wymeditor._doc).find('body.wym_iframe');
     actionElement = $body.find('#' + elmntId)[0];
@@ -2173,7 +2215,185 @@ test("Shouldn't eat newline text spacing in li", function () {
             '</ul>',
         wymeditor = jQuery.wymeditors(0);
 
-    wymeditor.html(initHtml);
+    wymeditor._html(initHtml);
     wymeditor.update();
     htmlEquals(wymeditor, expectedHtml);
 });
+
+module("list-indent_outdent_with_table", {setup: setupWym});
+
+/**
+    changeIndent
+    ============
+
+    Puts the html in the body of the wymeditor and applies either the indent or
+    outdent command to the selection ranging from the element with id selStart
+    to the element with id selEnd. selStart and selEnd should be strings in the
+    form '#<element_id>' where <element_id> is the id attribute of the element
+    to be selected. inOrOur should be the string 'indent' if the indent command
+    should be applied to the selection, or it should be the string 'outdent' if
+    the outdent command should be applied to the selection.
+*/
+function changeIndent(wymeditor, html, selStart, selEnd, inOrOut) {
+    var $body;
+
+    wymeditor._html(html);
+    $body = jQuery(wymeditor._doc).find('body.wym_iframe');
+    makeTextSelection(wymeditor, $body.find(selStart)[0],
+                      $body.find(selEnd)[0], 0, 1);
+    if (inOrOut === "indent") {
+        wymeditor.indent();
+    } else if (inOrOut === "outdent") {
+        wymeditor.outdent();
+    }
+}
+
+var TEST_LINEBREAK_SPACER = '<br class="' +
+                                WYMeditor.BLOCKING_ELEMENT_SPACER_CLASS + ' ' +
+                                WYMeditor.EDITOR_ONLY_CLASS + '"/>';
+
+var expectedMiddleIn = String() +
+    '<ol>' +
+        '<li id="li_1">1' +
+            '<ol>' +
+                '<li id="li_2">2' +
+                    '<table>' +
+                        '<caption>test_1</caption>' +
+                        '<tbody>' +
+                        '<tr>' +
+                            '<td id="t1_1_1">1_1</td>' +
+                        '</tr>' +
+                        '</tbody>' +
+                    '</table>' +
+                    TEST_LINEBREAK_SPACER +
+                '</li>' +
+                '<li id="li_3">3</li>' +
+            '</ol>' +
+        '</li>' +
+    '</ol>';
+
+var expectedMiddleOutPartial = String() +
+    '<ol>' +
+        '<li id="li_1">1</li>' +
+        '<li id="li_2">2' +
+            '<table>' +
+                '<caption>test_1</caption>' +
+                '<tbody>' +
+                    '<tr>' +
+                        '<td id="t1_1_1">1_1</td>' +
+                    '</tr>' +
+                '</tbody>' +
+            '</table>' +
+            TEST_LINEBREAK_SPACER +
+            '<ol>' +
+                '<li id="li_3">3</li>' +
+            '</ol>' +
+        '</li>' +
+    '</ol>';
+
+var expectedMiddleOutFull = String() +
+    '<ol>' +
+        '<li id="li_1">1</li>' +
+        '<li id="li_2">2' +
+            '<table>' +
+                '<caption>test_1</caption>' +
+                '<tbody>' +
+                    '<tr>' +
+                        '<td id="t1_1_1">1_1</td>' +
+                    '</tr>' +
+                '</tbody>' +
+            '</table>' +
+            TEST_LINEBREAK_SPACER +
+        '</li>' +
+        '<li id="li_3">3</li>' +
+    '</ol>';
+
+var expectedEndIn = String() +
+    '<ol>' +
+        '<li id="li_1">1</li>' +
+        '<li id="li_2">2' +
+            '<ol>' +
+                '<li id="li_3">3' +
+                    '<table>' +
+                        '<caption>test_1</caption>' +
+                        '<tbody>' +
+                            '<tr>' +
+                                '<td id="t1_1_1">1_1</td>' +
+                            '</tr>' +
+                        '</tbody>' +
+                    '</table>' +
+                    TEST_LINEBREAK_SPACER +
+                '</li>' +
+            '</ol>' +
+        '</li>' +
+    '</ol>';
+
+var expectedEndOut = String() +
+        '<ol>' +
+            '<li id="li_1">1</li>' +
+            '<li id="li_2">2</li>' +
+            '<li id="li_3">3' +
+                '<table>' +
+                    '<caption>test_1</caption>' +
+                    '<tbody>' +
+                        '<tr>' +
+                            '<td id="t1_1_1">1_1</td>' +
+                        '</tr>' +
+                    '</tbody>' +
+                '</table>' +
+                TEST_LINEBREAK_SPACER +
+            '</li>' +
+        '</ol>';
+
+var startEndInNoBR = expectedEndIn.replace(TEST_LINEBREAK_SPACER, '');
+
+var startEndOutNoBR = expectedEndOut.replace(TEST_LINEBREAK_SPACER, '');
+
+test("Indent with table in the middle of a list", function () {
+    expect(1);
+    var wymeditor = jQuery.wymeditors(0),
+        $body = jQuery(wymeditor._doc).find('body.wym_iframe');
+
+    changeIndent(wymeditor, expectedMiddleOutFull, '#li_2', '#li_3', 'indent');
+    deepEqual(normalizeHtml($body.get(0).firstChild), expectedMiddleIn,
+           "Table indented in the middle of a list");
+});
+
+test("Indent with table at the end of a list", function () {
+    expect(2);
+    var wymeditor = jQuery.wymeditors(0),
+        $body = jQuery(wymeditor._doc).find('body.wym_iframe');
+
+    changeIndent(wymeditor, expectedEndOut, '#li_3', '#li_3', 'indent');
+    deepEqual(normalizeHtml($body.get(0).firstChild), expectedEndIn,
+           "Table indented at the end of a list");
+
+    changeIndent(wymeditor, startEndOutNoBR, '#li_3', '#li_3', 'indent');
+    deepEqual(normalizeHtml($body.get(0).firstChild), expectedEndIn,
+           "Table indented at the end of a list with no line break");
+});
+
+test("Outdent with table in the middle of a list", function () {
+    expect(1);
+    var wymeditor = jQuery.wymeditors(0),
+        $body = jQuery(wymeditor._doc).find('body.wym_iframe');
+
+    changeIndent(wymeditor, expectedMiddleIn, '#li_2', '#li_2', 'outdent');
+    deepEqual(normalizeHtml($body.get(0).firstChild), expectedMiddleOutPartial,
+           "Table outdented in the middle of a list");
+});
+
+test("Outdent with table at the end of a list", function () {
+    expect(2);
+    var wymeditor = jQuery.wymeditors(0),
+        $body = jQuery(wymeditor._doc).find('body.wym_iframe');
+
+    changeIndent(wymeditor, expectedEndIn, '#li_3', '#li_3', 'outdent');
+    deepEqual(normalizeHtml($body.get(0).firstChild), expectedEndOut,
+           "Table outdented at the end of a list");
+
+    changeIndent(wymeditor, expectedEndOut, '#li_3', '#li_3', 'outdent');
+    deepEqual(normalizeHtml($body.get(0).firstChild), expectedEndOut,
+           "Table outdented at the end of a list with no line break");
+});
+

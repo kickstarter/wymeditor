@@ -1,18 +1,24 @@
 /**
  * Run a table modification and verify the results.
  *
- * @param selector jQuery selector for the element to modify (the first match is used)
+ * @param selector jQuery selector for the element to modify (the first match
+ *                 is used by default)
  * @param action A string with either 'add' or 'remove'
  * @param type A string with either 'row' or 'column'
  * @param initialHtml The starting HTML
- * @param expectedHtml The expected HTML result.
+ * @param expectedHtml The expected HTML result
+ * @param indexInSelector The eq index of the desired match to use within the
+ *                        passed selector (0 by default)
  */
-function testTable(selector, action, type, initialHtml, expectedHtml) {
+function testTable(
+    selector, action, type, initialHtml, expectedHtml, indexInSelector
+) {
     var wymeditor = jQuery.wymeditors(0);
-    wymeditor.html(initialHtml);
+    wymeditor._html(initialHtml);
 
     var $body = jQuery(wymeditor._doc).find('body.wym_iframe');
-    var actionElmnt = $body.find(selector)[0];
+    var indexInSelector = indexInSelector || 0;
+    var actionElmnt = $body.find(selector)[indexInSelector];
 
     if (action === 'add') {
         if (type === 'row') {
@@ -33,7 +39,7 @@ function testTable(selector, action, type, initialHtml, expectedHtml) {
 
 function testTableTab(initialHtml, startSelector, endSelector) {
     var wymeditor = jQuery.wymeditors(0);
-    wymeditor.html(initialHtml);
+    wymeditor._html(initialHtml);
 
     var $body = jQuery(wymeditor._doc).find('body.wym_iframe');
     var startElmnt = $body.find(startSelector)[0];
@@ -44,14 +50,14 @@ function testTableTab(initialHtml, startSelector, endSelector) {
 
     var actualSelection = wymeditor.selected();
     if (endSelector === null) {
-        equals(actualSelection, null);
+        deepEqual(actualSelection, null);
     } else {
         var expectedSelection = $body.find(endSelector);
         if (expectedSelection.length !== 0) {
             expectedSelection = expectedSelection[0];
         }
 
-        equals(actualSelection, expectedSelection);
+        deepEqual(actualSelection, expectedSelection);
     }
 }
 
@@ -71,7 +77,7 @@ function testTableTab(initialHtml, startSelector, endSelector) {
 function testRowMerge(initialHtml, expectedHtml, startSelector, endSelector, expectedFinalSelector) {
 
     var wymeditor = jQuery.wymeditors(0);
-    wymeditor.html(initialHtml);
+    wymeditor._html(initialHtml);
 
     // Verify that the proposed selection range exists, and then make that
     // selection
@@ -86,7 +92,7 @@ function testRowMerge(initialHtml, expectedHtml, startSelector, endSelector, exp
     // merge
     var sel = rangy.getIframeSelection(wymeditor._iframe);
     var changesMade = wymeditor.tableEditor.mergeRow(sel);
-    equals(changesMade, true);
+    deepEqual(changesMade, true);
 
     // Verify that the resulting HTML matches the expected HTML
     htmlEquals(wymeditor, expectedHtml);
@@ -95,26 +101,26 @@ function testRowMerge(initialHtml, expectedHtml, startSelector, endSelector, exp
     // selection.
     var actualSelection = wymeditor.selected();
     if (expectedFinalSelector === null) {
-        equals(actualSelection, null);
+        deepEqual(actualSelection, null);
     } else {
         var expectedSelection = $body.find(expectedFinalSelector);
         if (expectedSelection.length !== 0) {
             expectedSelection = expectedSelection[0];
         }
 
-        equals(actualSelection, expectedSelection, "Ending selection matches");
+        deepEqual(actualSelection, expectedSelection, "Ending selection matches");
     }
 }
 
 function testGetCellXIndex(initialHtml, cellSelector, expectedIndex) {
     var wymeditor = jQuery.wymeditors(0);
-    wymeditor.html(initialHtml);
+    wymeditor._html(initialHtml);
 
     var $body = jQuery(wymeditor._doc).find('body.wym_iframe');
     var cell = $body.find(cellSelector)[0];
 
     var actual = wymeditor.tableEditor.getCellXIndex(cell);
-    equals(actual, expectedIndex);
+    deepEqual(actual, expectedIndex);
 }
 
 module("Table Modification", {setup: setupWym});
@@ -674,14 +680,14 @@ test("Row end row", function () {
     expect(2);
 
     testTable('#td_3_2', 'add', 'row', basicTableHtml, addRowTd32Html);
-    testTable('#tr_3 + tr td:eq(1)', 'remove', 'row', addRowTd32Html, basicTableHtml);
+    testTable('#tr_3 + tr td', 'remove', 'row', addRowTd32Html, basicTableHtml, 1);
 });
 
 test("Row from span", function () {
     expect(2);
 
     testTable('#span_2_1', 'add', 'row', basicTableHtml, addRowSpan21Html);
-    testTable('#tr_2 + tr td:eq(0)', 'remove', 'row', addRowSpan21Html, basicTableHtml);
+    testTable('#tr_2 + tr td', 'remove', 'row', addRowSpan21Html, basicTableHtml);
 });
 
 test("Deleting all rows removes table", function () {
@@ -705,14 +711,14 @@ test("Row", function () {
     expect(2);
 
     testTable('#td_3_2', 'add', 'row', fancyTableHtml, addRowFancyTd32);
-    testTable('#tr_3 + tr td:eq(0)', 'remove', 'row', addRowFancyTd32, fancyTableHtml);
+    testTable('#tr_3 + tr td', 'remove', 'row', addRowFancyTd32, fancyTableHtml);
 });
 
 test("Row in colspan", function () {
     expect(2);
 
     testTable('#td_1_2', 'add', 'row', fancyTableHtml, addRowFancyTd12);
-    testTable('#tr_1 + tr td:eq(0)', 'remove', 'row', addRowFancyTd12, fancyTableHtml);
+    testTable('#tr_1 + tr td', 'remove', 'row', addRowFancyTd12, fancyTableHtml);
 });
 
 if (!SKIP_KNOWN_FAILING_TESTS) {
@@ -720,7 +726,7 @@ if (!SKIP_KNOWN_FAILING_TESTS) {
         expect(2);
 
         testTable('#td_2_2', 'add', 'row', fancyTableHtml, addRowFancyTd22);
-        testTable('#tr_2 + tr td:eq(0)', 'remove', 'row', addRowFancyTd22, fancyTableHtml);
+        testTable('#tr_2 + tr td', 'remove', 'row', addRowFancyTd22, fancyTableHtml);
     });
 }
 
@@ -792,14 +798,14 @@ test("Row with TH end row", function () {
     expect(2);
 
     testTable('#td_3_2', 'add', 'row', thTableHtml, addRowThTd32Html);
-    testTable('#tr_3 + tr td:eq(1)', 'remove', 'row', addRowThTd32Html, thTableHtml);
+    testTable('#tr_3 + tr td', 'remove', 'row', addRowThTd32Html, thTableHtml, 1);
 });
 
 test("Row with TH first th row", function () {
     expect(2);
 
     testTable('#th_1_3', 'add', 'row', thTableHtml, addRowThTh13Html);
-    testTable('#tr_1 + tr td:eq(2)', 'remove', 'row', addRowThTh13Html, thTableHtml);
+    testTable('#tr_1 + tr td', 'remove', 'row', addRowThTh13Html, thTableHtml, 2);
 });
 
 module("table- tab movement", {setup: setupWym});
@@ -825,7 +831,9 @@ test("Tab to next row", function () {
 test("Tab from th to next row", function () {
     expect(3);
     var expectedSelector = '#span_2_1';
-    if (jQuery.browser.mozilla) {
+    if (jQuery.browser.mozilla ||
+        (jQuery.browser.msie && parseInt(jQuery.browser.version, 10) >= 9.0))
+    {
         expectedSelector = '#td_2_1';
     }
     testTableTab(thTableHtml, '#th_1_3', expectedSelector);
@@ -1414,7 +1422,7 @@ test("getCellXIndex test", function () {
 module("utils", {setup: setupWym});
 function testNormalize(testHtml) {
     var normed = normalizeHtml(jQuery(testHtml)[0]);
-    equals(normed, testHtml);
+    deepEqual(normed, testHtml);
 }
 
 test("Test Normalize", function () {
