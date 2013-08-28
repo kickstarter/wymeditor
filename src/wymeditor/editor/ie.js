@@ -311,7 +311,6 @@ WYMeditor.WymClassExplorer.prototype.keyup = function (evt) {
             wym.wrapWithContainer(selectedNode, defaultRootContainer);
             wym.fixBodyHtml();
         }
-        $(wym._element).trigger('wymeditor:doc_html_updated', [wym, $(wym._doc.body).html()]);
     }
 
     // If we potentially created a new block level element or moved to a new one
@@ -327,6 +326,8 @@ WYMeditor.WymClassExplorer.prototype.keyup = function (evt) {
             wym.fixBodyHtml();
         }
     }
+
+    $(wym._element).trigger('wymeditor:doc_html_updated', [wym, $(wym._doc.body).html()]);
 };
 
 WYMeditor.WymClassExplorer.prototype.setFocusToNode = function (node, toStart) {

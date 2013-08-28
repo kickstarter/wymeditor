@@ -227,7 +227,6 @@ WYMeditor.WymClassMozilla.prototype.keyup = function (evt) {
             wym.fixBodyHtml();
         }
 
-        $(wym._element).trigger('wymeditor:doc_html_updated', [wym, $(wym._doc.body).html()]);
     }
 
     // If we potentially created a new block level element or moved to a new
@@ -249,6 +248,7 @@ WYMeditor.WymClassMozilla.prototype.keyup = function (evt) {
         // Fix formatting if necessary
         wym.fixBodyHtml();
     }
+    $(wym._element).trigger('wymeditor:doc_html_updated', [wym, $(wym._doc.body).html()]);
 };
 
 WYMeditor.WymClassMozilla.prototype.click = function (evt) {
