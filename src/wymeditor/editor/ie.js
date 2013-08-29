@@ -340,42 +340,6 @@ WYMeditor.WymClassExplorer.prototype.setFocusToNode = function (node, toStart) {
     node.focus();
 };
 
-/* @name spaceBlockingElements
- * @description Insert <br> elements between adjacent blocking elements and
- * p elements, between block elements or blocking elements and after blocking
- * elements.
- */
-WYMeditor.WymClassExplorer.prototype.spaceBlockingElements = function () {
-    var blockingSelector = WYMeditor.BLOCKING_ELEMENTS.join(', '),
-        wym = this._wym,
-        $body = jQuery(this._doc).find('body.wym_iframe'),
-        children = $body.children(),
-        placeholderNode = WYMeditor.WymClassExplorer.PLACEHOLDER_NODE,
-        $firstChild,
-        $lastChild,
-        blockSepSelector;
-
-    // If we potentially created a new block level element or moved to a new
-    // one, then we should ensure the container is valid and the formatting is
-    // proper.
-    if (wym.keyCanCreateBlockElement(evt.which)) {
-        // If the selected container is a root container, make sure it is not a
-        // different possible default root container than the chosen one.
-        container = wym.selected();
-        name = container.tagName.toLowerCase();
-        if (container.parentNode) {
-            parentName = container.parentNode.tagName.toLowerCase();
-        }
-        if (jQuery.inArray(name, notValidRootContainers) > -1 &&
-                parentName === WYMeditor.BODY) {
-            wym.switchTo(container, defaultRootContainer);
-        }
-
-        // Fix formatting if necessary
-        wym.fixBodyHtml();
-    }
-};
-
 /* @name paste
  * @description         Paste text into the editor below the carret,
  *                      used for "Paste from Word".
