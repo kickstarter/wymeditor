@@ -347,7 +347,7 @@ WYMeditor.WymClassExplorer.prototype.setFocusToNode = function (node, toStart) {
  */
 WYMeditor.WymClassExplorer.prototype.spaceBlockingElements = function () {
     var blockingSelector = WYMeditor.BLOCKING_ELEMENTS.join(', '),
-
+        wym = this._wym,
         $body = jQuery(this._doc).find('body.wym_iframe'),
         children = $body.children(),
         placeholderNode = WYMeditor.WymClassExplorer.PLACEHOLDER_NODE,
