@@ -1517,7 +1517,7 @@ WYMeditor.editor.prototype.append_empty_p_if_last_block_is_uneditable = function
         $last = $last.children(':last');
     }
     if ($last.attr('contenteditable') === 'false') {
-        $(this._doc).find('body').append('<p></p>');
+        $(this._doc).find('body').append('<p>&nbsp;</p>');
     }
 };
 
