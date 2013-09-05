@@ -208,16 +208,16 @@ WYMeditor.editor.prototype.bindEvents = function () {
         $html_val;
 
     // Handle click events on tools buttons
-    jQuery(this._box).find(this._options.toolSelector).click(function () {
+    jQuery(this._box).find(this._options.toolSelector).click(function (e) {
         wym._iframe.contentWindow.focus(); //See #154
         wym.exec(jQuery(this).attr(WYMeditor.NAME));
-        return false;
+        e.preventDefault();
     });
 
     // Handle click events on containers buttons
-    jQuery(this._box).find(this._options.containerSelector).click(function () {
+    jQuery(this._box).find(this._options.containerSelector).click(function (e) {
         wym.container(jQuery(this).attr(WYMeditor.NAME));
-        return false;
+        e.preventDefault();
     });
 
     // Handle keyup event on html value: set the editor value
@@ -239,7 +239,7 @@ WYMeditor.editor.prototype.bindEvents = function () {
     });
 
     // Handle click events on classes buttons
-    jQuery(this._box).find(this._options.classSelector).click(function () {
+    jQuery(this._box).find(this._options.classSelector).click(function (e) {
         var aClasses = eval(wym._options.classesItems),
             sName = jQuery(this).attr(WYMeditor.NAME),
 
@@ -251,7 +251,7 @@ WYMeditor.editor.prototype.bindEvents = function () {
             wym.toggleClass(sName, jqexpr);
         }
         wym._iframe.contentWindow.focus(); //See #154
-        return false;
+        e.preventDefault();
     });
 
     // Handle update event on update element
