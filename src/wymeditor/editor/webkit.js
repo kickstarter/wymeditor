@@ -190,7 +190,7 @@ WYMeditor.WymClassSafari.prototype.keyup = function (evt) {
 
         container = wym.selected();
         name = container ? container.tagName.toLowerCase() : 'body';
-        if (container.parentNode) {
+        if (container && container.parentNode) {
             parentName = container.parentNode.tagName.toLowerCase();
         }
 
