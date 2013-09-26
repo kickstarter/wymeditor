@@ -1510,15 +1510,17 @@ WYMeditor.editor.prototype.insert_next = function (html, direction) {
     $(this._element).trigger('wymeditor:doc_html_updated', [this, $(this._doc.body).html()]);
 };
 
-WYMeditor.editor.prototype.append_empty_p_if_last_block_is_uneditable = function (html) {
-    var $last = $(this._doc).find('body > :not(span):last');
-    // sometimes a block can be linked
-    if ($last.is('a')) {
-        $last = $last.children(':last');
-    }
-    if ($last.attr('contenteditable') === 'false') {
-        $(this._doc).find('body').append('<p>&nbsp;</p>');
-    }
+WYMeditor.editor.prototype.append_empty_p_if_next_block_is_uneditable = function (html) {
+    var $uneditable = $('[contenteditable=false]', this._doc);
+    $uneditable.each(function () {
+      var $this = $(this),
+        $next = $this.next();
+      if ($next.length && ($next[0].contentEditable !== 'false'))
+        return;
+      } else {
+        $this.after('<p>&nbsp;</p>');
+      }
+    });
 };
 
 WYMeditor.editor.prototype.wrap = function (left, right) {
