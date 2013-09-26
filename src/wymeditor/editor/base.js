@@ -1510,7 +1510,7 @@ WYMeditor.editor.prototype.insert_next = function (html, direction) {
     $(this._element).trigger('wymeditor:doc_html_updated', [this, $(this._doc.body).html()]);
 };
 
-WYMeditor.editor.prototype.append_empty_p_if_next_block_is_uneditable = function (html) {
+WYMeditor.editor.prototype.insert_empty_p_if_next_block_is_uneditable = function (html) {
     var $uneditable = $('[contenteditable=false]', this._doc);
     $uneditable.each(function () {
       var $this = $(this),
