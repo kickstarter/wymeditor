@@ -1515,7 +1515,16 @@ WYMeditor.editor.prototype.insert_empty_p_if_next_block_is_uneditable = function
     $uneditable.each(function () {
       var $this = $(this),
         $next = $this.next();
-      if ($next.length && ($next[0].contentEditable !== 'false')) {
+      if (
+        $next.length &&
+          (
+           ($next[0].contentEditable !== 'false') &&
+           !$next.is('span.rangySelectionBoundary') //rangy
+          )
+        ) {
+          if (!$next.height()) {
+            $next.append('&nbsp;');
+          }
         return;
       } else {
         $this.after('<p>&nbsp;</p>');
