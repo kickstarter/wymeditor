@@ -117,17 +117,21 @@ WYMeditor.editor.prototype.init = function () {
 
     for (i = 0; i < aTools.length; i += 1) {
         oTool = aTools[i];
-        sTool = '';
-        if (oTool.name && oTool.title) {
-            sTool = this._options.toolsItemHtml;
+        if (oTool.html) {
+          sTool = oTool.html;
+        } else {
+          sTool = '';
+          if (oTool.name && oTool.title) {
+              sTool = this._options.toolsItemHtml;
+          }
+          sTool = h.replaceAll(sTool, WYMeditor.TOOL_NAME, oTool.name);
+          sTool = h.replaceAll(
+              sTool,
+              WYMeditor.TOOL_TITLE,
+              this._options.stringDelimiterLeft + oTool.title + this._options.stringDelimiterRight
+          );
+          sTool = h.replaceAll(sTool, WYMeditor.TOOL_CLASS, oTool.css);
         }
-        sTool = h.replaceAll(sTool, WYMeditor.TOOL_NAME, oTool.name);
-        sTool = h.replaceAll(
-            sTool,
-            WYMeditor.TOOL_TITLE,
-            this._options.stringDelimiterLeft + oTool.title + this._options.stringDelimiterRight
-        );
-        sTool = h.replaceAll(sTool, WYMeditor.TOOL_CLASS, oTool.css);
         sTools += sTool;
     }
 
