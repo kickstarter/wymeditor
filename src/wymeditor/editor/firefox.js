@@ -113,17 +113,16 @@ WYMeditor.WymClassMozilla.prototype._exec = function (cmd, param) {
     return true;
 };
 
-var $last_focused_p = $([]);
+var $lastFocusedP = jQuery([]);
 
 //keydown handler, mainly used for keyboard shortcuts
 WYMeditor.WymClassMozilla.prototype.keydown = function (evt) {
     //'this' is the doc
     var wym = WYMeditor.INSTANCES[this.title],
-      container = null,
-      $p = $(wym.selection().focusNode).closest('p');
+      $p = jQuery(wym.selection().focusNode).closest('p');
 
     if ($p.length) {
-        $last_focused_p = $p;
+        $lastFocusedP = $p;
     }
 
     if (evt.ctrlKey) {
@@ -209,7 +208,11 @@ WYMeditor.WymClassMozilla.prototype.keyup = function (evt) {
         // Fix formatting if necessary
         wym.fixBodyHtml();
     }
-    $(wym._element).trigger('wymeditor:doc_html_updated', [wym, $(wym._doc.body).html()]);
+    jQuery(wym._element)
+      .trigger(
+          'wymeditor:doc_html_updated',
+          [wym, jQuery(wym._doc.body).html()]
+      );
 };
 
 WYMeditor.WymClassMozilla.prototype.click = function () {

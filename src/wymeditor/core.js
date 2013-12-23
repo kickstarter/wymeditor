@@ -1173,7 +1173,7 @@ WYMeditor.Helper = {
 
     //trim 'str' string
     trim: function (str) {
-        return $.trim(str);
+        return jQuery.trim(str);
     },
 
     //return true if 'arr' array contains 'elem', or false

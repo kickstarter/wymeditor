@@ -357,7 +357,7 @@ WYMeditor.editor.prototype.xhtml = function () {
     execCommand in some cases).
 */
 WYMeditor.editor.prototype.exec = function (cmd, args) {
-    var container, custom_run, _this = this, all_custom_commands, collapsed = true, $selected_a;
+    var container, custom_run, _this = this, all_custom_commands, $selected_a;
     switch (cmd) {
 
     case WYMeditor.CREATE_LINK:
@@ -394,7 +394,9 @@ WYMeditor.editor.prototype.exec = function (cmd, args) {
         break;
 
     case WYMeditor.TOGGLE_HTML:
-        jQuery(this._box).find(this._options.htmlValSelector).not('.hasfocus').val(this.xhtml()); //#147
+        jQuery(this._box)
+          .find(this._options.htmlValSelector).not('.hasfocus')
+          .val(this.xhtml()); //#147
         this.toggleHtml();
         break;
 
@@ -420,8 +422,8 @@ WYMeditor.editor.prototype.exec = function (cmd, args) {
 
 
     default:
-        all_custom_commands = $.merge([], this._options.customCommands);
-        $.merge(all_custom_commands, WYMeditor.CUSTOM_COMMANDS);
+        all_custom_commands = jQuery.merge([], this._options.customCommands);
+        jQuery.merge(all_custom_commands, WYMeditor.CUSTOM_COMMANDS);
         jQuery.each(all_custom_commands, function () {
             if (cmd === this.name) {
                 custom_run = true;
@@ -437,7 +439,7 @@ WYMeditor.editor.prototype.exec = function (cmd, args) {
 
     if (cmd !== WYMeditor.TOGGLE_HTML) {
         this.update_selections();
-        this._element.trigger('wymeditor:doc_html_updated', [this, $(this._doc.body).html()]);
+        this._element.trigger('wymeditor:doc_html_updated', [this, jQuery(this._doc.body).html()]);
     }
 };
 
@@ -1165,11 +1167,11 @@ WYMeditor.editor.prototype.toggleHtml = function () {
         $html_box.find('textarea').width($iframe_box.width() - 10);
         $button.addClass('selected');
         $iframe_box.css('visibility', 'hidden');
-        $(this._box).find('.ui-resizable-handle').hide();
+        jQuery(this._box).find('.ui-resizable-handle').hide();
     } else {
         $html_box.hide();
         $button.removeClass('selected');
-        $(this._box).find('.ui-resizable-handle').show();
+        jQuery(this._box).find('.ui-resizable-handle').show();
         $iframe_box.css('visibility', 'visible');
         jQuery(this._doc).focus();
     }
@@ -1401,7 +1403,7 @@ WYMeditor.editor.prototype.paste = function (str) {
     jQuery('body > br', this._doc).remove();
 
     // Restore focus
-    this.setFocusToNode(focusNode);
+    this.setFocusToNode(sel.focusNode);
 };
 
 WYMeditor.editor.prototype.insert = function (html) {
@@ -1431,7 +1433,7 @@ WYMeditor.editor.prototype.insertBlock = function (html) {
         insert_next_direction = 'after';
 
     function getBlockContainer(node) {
-        return $(node).closest('div, p, h1, h2, h3, embed, cite')[0];
+        return jQuery(node).closest('div, p, h1, h2, h3, embed, cite')[0];
     }
 
     if (focusNode) {
@@ -1467,9 +1469,7 @@ WYMeditor.editor.prototype.insertText = function (text) {
 WYMeditor.editor.prototype.insert_next = function (html, direction) {
     // Do we have a selection?
     var selection = this.selected(),
-        range,
-        node,
-        $selection_node = $(selection),
+        $selection_node = jQuery(selection),
         $closest_blockquote = $selection_node.closest('blockquote'),
         $closest_block_element,
         $test;
@@ -1528,30 +1528,31 @@ WYMeditor.editor.prototype.insert_next = function (html, direction) {
             $test.remove();
         }
     } else {
-        $(this._doc.body).prepend(html);
+        jQuery(this._doc.body).prepend(html);
     }
-    $(this._element).trigger('wymeditor:doc_html_updated', [this, $(this._doc.body).html()]);
+    jQuery(this._element)
+      .trigger('wymeditor:doc_html_updated', [this, jQuery(this._doc.body).html()]);
 };
 
-WYMeditor.editor.prototype.insert_empty_p_if_next_block_is_uneditable = function (html) {
-    var $uneditable = $('[contenteditable=false]', this._doc);
+WYMeditor.editor.prototype.insert_empty_p_if_next_block_is_uneditable = function () {
+    var $uneditable = jQuery('[contenteditable=false]', this._doc);
     $uneditable.each(function () {
-      var $this = $(this),
-        $next = $this.next();
-      if (
-        $next.length &&
-          (
-           ($next[0].contentEditable !== 'false') &&
-           !$next.is('span.rangySelectionBoundary') //rangy
-          )
-        ) {
-          if (!$next.height()) {
-            $next.append('&nbsp;');
-          }
-        return;
-      } else {
-        $this.after('<p>&nbsp;</p>');
-      }
+        var $this = jQuery(this),
+          $next = $this.next();
+        if (
+            $next.length &&
+              (
+               ($next[0].contentEditable !== 'false') &&
+               !$next.is('span.rangySelectionBoundary') //rangy
+              )
+          ) {
+            if (!$next.height()) {
+                $next.append('&nbsp;');
+            }
+            return;
+        } else {
+            $this.after('<p>&nbsp;</p>');
+        }
     });
 };
 
@@ -2815,9 +2816,11 @@ WYMeditor.editor.prototype.mousedown = function (evt) {
     }
 };
 
-WYMeditor.editor.prototype.update_selections = function (evt) {
+WYMeditor.editor.prototype.update_selections = function () {
     var wym = this;
-    wym._box.find('.wym_tools ul > li:not(.wym_tools_html)').removeClass('selected').removeClass('partially_selected');
+    wym._box.find('.wym_tools ul > li:not(.wym_tools_html)')
+      .removeClass('selected')
+      .removeClass('partially_selected');
 
     if (this.selected_parents_contains('b').length) {
         wym._box.find('.wym_tools_strong').addClass('selected');

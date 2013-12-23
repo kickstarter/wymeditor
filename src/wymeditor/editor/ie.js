@@ -257,8 +257,8 @@ WYMeditor.WymClassExplorer.prototype.keyup = function (evt) {
         }
     }
 
-    // If we potentially created a new block level element or moved to a new one
-    // then we should ensure that they're in the proper format
+    // If we potentially created a new block level element or moved to a
+    // new one then we should ensure that they're in the proper format
     if (evt.keyCode === WYMeditor.KEY.UP ||
             evt.keyCode === WYMeditor.KEY.DOWN ||
             evt.keyCode === WYMeditor.KEY.BACKSPACE ||
@@ -271,7 +271,11 @@ WYMeditor.WymClassExplorer.prototype.keyup = function (evt) {
         }
     }
 
-    $(wym._element).trigger('wymeditor:doc_html_updated', [wym, $(wym._doc.body).html()]);
+    jQuery(wym._element)
+      .trigger(
+          'wymeditor:doc_html_updated',
+          [wym, jQuery(wym._doc.body).html()]
+      );
 };
 
 WYMeditor.WymClassExplorer.prototype.setFocusToNode = function (node, toStart) {

@@ -204,6 +204,10 @@ WYMeditor.WymClassSafari.prototype.keyup = function (evt) {
         wym.fixBodyHtml();
     }
 
-    $(wym._element).trigger('wymeditor:doc_html_updated', [wym, $(wym._doc.body).html()]);
+    jQuery(wym._element)
+      .trigger(
+          'wymeditor:doc_html_updated',
+          [wym, jQuery(wym._doc.body).html()]
+      );
 };
 
