@@ -511,25 +511,6 @@ test("List- 2nd level li li_2_2", function () {
 
 module("table-insertion", {setup: setupWym});
 
-test("Table is editable after insertion", function () {
-    expect(7);
-
-    var wymeditor = jQuery.wymeditors(0),
-        $body,
-        dm;
-    wymeditor._html('');
-
-    $body = jQuery(wymeditor._doc).find('body.wym_iframe');
-    wymeditor.insertTable(3, 2, '', '');
-
-    $body.find('td').each(function (index, td) {
-        deepEqual(isContentEditable(td), true);
-    });
-
-    dm = wymeditor._doc.designMode;
-    ok(dm === 'on' || dm === 'On');
-});
-
 // Only FF >= 3.5 seems to require content in <td> for them to be editable
 if (jQuery.browser.mozilla) {
     var table_3_2_html = String() +
