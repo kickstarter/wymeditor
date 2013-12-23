@@ -1,25 +1,6 @@
 /*jslint evil: true */
-/*
- * WYMeditor : what you see is What You Mean web-based editor
- * Copyright (c) 2005 - 2009 Jean-Francois Hovinne, http://www.wymeditor.org/
- * Dual licensed under the MIT (MIT-license.txt)
- * and GPL (GPL-license.txt) licenses.
- *
- * For further information visit:
- *        http://www.wymeditor.org/
- *
- * File Name:
- *        jquery.wymeditor.mozilla.js
- *        Gecko specific class and functions.
- *        See the documentation for more info.
- *
- * File Authors:
- *        Jean-Francois Hovinne (jf.hovinne a-t wymeditor dotorg)
- *        Volker Mische (vmx a-t gmx dotde)
- *        Bermi Ferrer (wymeditor a-t bermi dotorg)
- *        Frédéric Palluel-Lafleur (fpalluel a-t gmail dotcom)
- *        Jonatan Lundin (jonatan.lundin a-t gmail dotcom)
- */
+/* global -$ */
+"use strict";
 
 WYMeditor.WymClassMozilla = function (wym) {
     this._wym = wym;
@@ -36,63 +17,48 @@ WYMeditor.WymClassMozilla.NEEDS_CELL_FIX = parseInt(
     jQuery.browser.version < '2.0';
 
 WYMeditor.WymClassMozilla.prototype.initIframe = function (iframe) {
-    var wym = this,
-        styles,
-        aCss;
+    var wym = this;
 
     this._iframe = iframe;
     this._doc = iframe.contentDocument;
 
-    //add css rules from options
-    styles = this._doc.styleSheets[0];
-
-    aCss = eval(this._options.editorStyles);
-
-    this.addCssRules(this._doc, aCss);
-
     this._doc.title = this._wym._index;
 
-    //set the text direction
+    // Set the text direction
     jQuery('html', this._doc).attr('dir', this._options.direction);
 
-    //init html value
+    // Init html value
     this._html(this._wym._options.html);
 
-    //init designMode
     this.enableDesignMode();
 
-    //pre-bind functions
     if (jQuery.isFunction(this._options.preBind)) {
         this._options.preBind(this);
     }
 
-    //bind external events
+    // Bind external events
     this._wym.bindEvents();
 
-    //bind editor keydown events
     jQuery(this._doc).bind("keydown", this.keydown);
-
-    //bind editor keyup events
     jQuery(this._doc).bind("keyup", this.keyup);
-
-    //bind editor click events
     jQuery(this._doc).bind("click", this.click);
-
-    //bind editor focus events (used to reset designmode - Gecko bug)
+    // Bind editor focus events (used to reset designmode - Gecko bug)
     jQuery(this._doc).bind("focus", function () {
         // Fix scope
         wym.enableDesignMode.call(wym);
     });
 
-    //post-init functions
     if (jQuery.isFunction(this._options.postInit)) {
         this._options.postInit(this);
     }
 
-    //add event listeners to doc elements, e.g. images
+    // Add event listeners to doc elements, e.g. images
     this.listen();
 
-    jQuery(this._element).trigger('wymeditor:iframe_loaded');
+    jQuery(wym._element).trigger(
+        WYMeditor.EVENTS.postIframeInitialization,
+        this._wym
+    );
 };
 
 /** @name html
@@ -147,13 +113,8 @@ WYMeditor.WymClassMozilla.prototype._exec = function (cmd, param) {
     return true;
 };
 
-WYMeditor.WymClassMozilla.prototype.addCssRule = function (styles, oCss) {
-
-    styles.insertRule(oCss.name + " {" + oCss.css + "}",
-        styles.cssRules.length);
-};
-
 var $last_focused_p = $([]);
+
 //keydown handler, mainly used for keyboard shortcuts
 WYMeditor.WymClassMozilla.prototype.keydown = function (evt) {
     //'this' is the doc
@@ -195,7 +156,7 @@ WYMeditor.WymClassMozilla.prototype.keyup = function (evt) {
         wym.documentStructureManager.structureRules.notValidRootContainers;
     defaultRootContainer =
         wym.documentStructureManager.structureRules.defaultRootContainer;
-    wym._selected_image = null;
+    wym._selectedImage = null;
     container = null;
 
     // If the inputted key cannont create a block element and is not a command,
@@ -251,7 +212,7 @@ WYMeditor.WymClassMozilla.prototype.keyup = function (evt) {
     $(wym._element).trigger('wymeditor:doc_html_updated', [wym, $(wym._doc.body).html()]);
 };
 
-WYMeditor.WymClassMozilla.prototype.click = function (evt) {
+WYMeditor.WymClassMozilla.prototype.click = function () {
     var wym = WYMeditor.INSTANCES[this.title],
         container = wym.selected(),
         sel;
@@ -260,8 +221,8 @@ WYMeditor.WymClassMozilla.prototype.click = function (evt) {
         if (container && container.tagName.toLowerCase() === WYMeditor.TR) {
             // Starting with FF 3.6, inserted tables need some content in their
             // cells before they're editable
-            jQuery(WYMeditor.TD, wym._doc.body)
-                .append(WYMeditor.WymClassMozilla.CELL_PLACEHOLDER);
+            jQuery(WYMeditor.TD, wym._doc.body).append(
+                WYMeditor.WymClassMozilla.CELL_PLACEHOLDER);
 
             // The user is still going to need to move out of and then back in
             // to this cell if the table was inserted via an inner_html call

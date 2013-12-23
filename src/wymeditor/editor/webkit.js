@@ -1,22 +1,6 @@
 /*jslint evil: true */
-/*
- * WYMeditor : what you see is What You Mean web-based editor
- * Copyright (c) 2005 - 2009 Jean-Francois Hovinne, http://www.wymeditor.org/
- * Dual licensed under the MIT (MIT-license.txt)
- * and GPL (GPL-license.txt) licenses.
- *
- * For further information visit:
- *        http://www.wymeditor.org/
- *
- * File Name:
- *        jquery.wymeditor.safari.js
- *        Safari specific class and functions.
- *        See the documentation for more info.
- *
- * File Authors:
- *        Jean-Francois Hovinne (jf.hovinne a-t wymeditor dotorg)
- *        Scott Lewis (lewiscot a-t gmail dotcom)
- */
+/* global -$ */
+"use strict";
 
 WYMeditor.WymClassSafari = function (wym) {
     this._wym = wym;
@@ -24,23 +8,15 @@ WYMeditor.WymClassSafari = function (wym) {
 };
 
 WYMeditor.WymClassSafari.prototype.initIframe = function (iframe) {
-    var wym = this,
-        styles,
-        aCss;
+    var wym = this;
 
-    this._iframe = iframe;
-    this._doc = iframe.contentDocument;
+    wym._iframe = iframe;
+    wym._doc = iframe.contentDocument;
 
-    //add css rules from options
-    styles = this._doc.styleSheets[0];
-    aCss = eval(this._options.editorStyles);
+    wym._doc.title = wym._wym._index;
 
-    this.addCssRules(this._doc, aCss);
-
-    this._doc.title = this._wym._index;
-
-    //set the text direction
-    jQuery('html', this._doc).attr('dir', this._options.direction);
+    // Set the text direction
+    jQuery('html', wym._doc).attr('dir', wym._options.direction);
 
     //init designMode
     this._doc.body.contentEditable = "true";
@@ -48,29 +24,26 @@ WYMeditor.WymClassSafari.prototype.initIframe = function (iframe) {
     //init html value
     this._html(this._wym._options.html);
 
-    //pre-bind functions
-    if (jQuery.isFunction(this._options.preBind)) {
-        this._options.preBind(this);
+    if (jQuery.isFunction(wym._options.preBind)) {
+        wym._options.preBind(wym);
     }
 
-    //bind external events
-    this._wym.bindEvents();
+    // Bind external events
+    wym._wym.bindEvents();
 
-    //bind editor keydown events
-    jQuery(this._doc).bind("keydown", this.keydown);
-
-    //bind editor keyup events
-    jQuery(this._doc).bind("keyup", this.keyup);
-
-    //post-init functions
-    if (jQuery.isFunction(this._options.postInit)) {
-        this._options.postInit(this);
+    jQuery(wym._doc).bind("keydown", wym.keydown);
+    jQuery(wym._doc).bind("keyup", wym.keyup);
+    if (jQuery.isFunction(wym._options.postInit)) {
+        wym._options.postInit(wym);
     }
 
-    //add event listeners to doc elements, e.g. images
-    this.listen();
+    // Add event listeners to doc elements, e.g. images
+    wym.listen();
 
-    jQuery(this._element).trigger('wymeditor:iframe_loaded');
+    jQuery(wym._element).trigger(
+        WYMeditor.EVENTS.postIframeInitialization,
+        wym._wym
+    );
 };
 
 WYMeditor.WymClassSafari.prototype._exec = function (cmd, param) {
@@ -80,7 +53,9 @@ WYMeditor.WymClassSafari.prototype._exec = function (cmd, param) {
 
     var container,
         $container,
-        tagName;
+        tagName,
+        structureRules,
+        noClassOrAppleSpan;
 
     if (param) {
         this._doc.execCommand(cmd, '', param);
@@ -95,8 +70,11 @@ WYMeditor.WymClassSafari.prototype._exec = function (cmd, param) {
 
         // Wrap this content in the default root container if we're in the body
         if (tagName === WYMeditor.BODY) {
-            this._exec(WYMeditor.FORMAT_BLOCK,
-                       this.documentStructureManager.structureRules.defaultRootContainer);
+            structureRules = this.documentStructureManager.structureRules;
+            this._exec(
+                WYMeditor.FORMAT_BLOCK,
+                structureRules.defaultRootContainer
+            );
             this.fixBodyHtml();
         }
 
@@ -113,23 +91,19 @@ WYMeditor.WymClassSafari.prototype._exec = function (cmd, param) {
 
         // If the container is a span, strip it out if it doesn't have a class
         // but has an inline style of 'font-weight: normal;'.
-        if (tagName === 'span' &&
-            (!$container.attr('class') ||
-                $container.attr('class').toLowerCase() === 'apple-style-span') &&
-            $container.attr('style') === 'font-weight: normal;') {
+        if (tagName === 'span') {
+            noClassOrAppleSpan = !$container.attr('class') ||
+                $container.attr('class').toLowerCase() === 'apple-style-span';
+            if (noClassOrAppleSpan &&
+                $container.attr('style') === 'font-weight: normal;') {
 
-            $container.contents().unwrap();
+                $container.contents().unwrap();
+            }
         }
     }
 
     return true;
 };
-
-WYMeditor.WymClassSafari.prototype.addCssRule = function (styles, oCss) {
-    styles.insertRule(oCss.name + " {" + oCss.css + "}",
-        styles.cssRules.length);
-};
-
 
 //keydown handler, mainly used for keyboard shortcuts
 WYMeditor.WymClassSafari.prototype.keydown = function (e) {
@@ -149,8 +123,8 @@ WYMeditor.WymClassSafari.prototype.keydown = function (e) {
         }
     } else if (e.shiftKey && e.which === WYMeditor.KEY.ENTER) {
         // Safari 4 and earlier would show a proper linebreak in the editor and
-        // then strip it upon save with the default action in the case of inserting
-        // a new line after bold text
+        // then strip it upon save with the default action in the case of
+        // inserting a new line after bold text
         wym._exec('InsertLineBreak');
         e.preventDefault();
     }
@@ -170,7 +144,7 @@ WYMeditor.WymClassSafari.prototype.keyup = function (evt) {
         wym.documentStructureManager.structureRules.notValidRootContainers;
     defaultRootContainer =
         wym.documentStructureManager.structureRules.defaultRootContainer;
-    wym._selected_image = null;
+    wym._selectedImage = null;
 
     // Fix to allow shift + return to insert a line break in older safari
     if (jQuery.browser.version < 534.1) {

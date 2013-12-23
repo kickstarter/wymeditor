@@ -1,53 +1,182 @@
+########################
 Dev Process Improvements
-========================
+########################
 
-This page is where I get to brain-dump ideas for improving the
+This page is where we brain-dump ideas for improving the
 development/testing/packaging/documentation/etc process because making Issues
 for speculation feels dirty.
 
-Standardize the Build Process on Grunt.js
------------------------------------------
+*************
+Build Process
+*************
 
-It's a Javascript project, so let's use Javascript tools. Via grunt, folks should be able to:
-* Make a build
-* Run the qunit tests in a headless PhantomJS thing
-* Run the selenium tests
-* Check code for style problems
+1. Minify/Concat all the things
+===============================
 
-This is started here: https://github.com/wymeditor/wymeditor/tree/issue_360
+HTTP requests are silly.
 
+Put all of the plugins in the bundled version,
+changing any of them so that just including the code
+doesn't activate them.
+
+2. Support Custom Builds
+========================
+
+Use an ``--exclude`` option to grunt
+similar to `this <https://github.com/webpro/jquery-evergreen/blob/master/Gruntfile.js>`_.
+Then folks can make their own slimmed-down builds.
+
+*************
 Documentation
--------------
+*************
 
-* Convert all of the existing docs from the old wiki to RST for hosting on
-  `Read The Docs <https://readthedocs.org/>`_
-* Take a pass to remove all of the obvious errors and new stuff
-* Move most of the good info from the readme to a good sphinx structure
-* Move the stuff that's unique on the wiki to the sphinx structure
+Better Structure
+================
+
+Current planned ideal:
+
+ * index
+ * getting_started/
+
+    * index
+    * setup (mention existing_integrations)
+    * philosophy (or should this be on the website?)
+    * getting_help (link to contributing)
+
+  * customizing_wymeditor/
+
+    * index (general overview of architecture
+      and explanation of customization methods)
+    * configuration_options
+    * using_plugins (content from using_wymeditor/using_plugins and plugins/index)
+    * using_skins
+    * using_content_layouts (better name than iframe)
+
+    * howto/ (instead of customizing_wymeditor/examples)
+
+      * toolbar_items ?
+      * etc
+
+  * plugins/
+
+    * index
+    * core_plugins/
+
+      * bidi
+      * list
+      * table
+      * etc
+
+    * third_party_plugins
+
+  * skins/
+
+    * index
+    * core_skins/
+
+      * silver
+      * legacy
+      * minimal
+
+    * third_party_skins
+
+  * content_layouts
+
+    * index
+    * core_content_layouts/
+
+      * pretty
+      * legacy
+
+    * third_party_content_layouts
+
+  * resources/
+
+    * index
+    * wymeditor_end_user_guide
+
+  * writing_plugins/
+
+    * index
+
+  * writing_skins/
+
+    * index
+
+  * writing_content_layouts/
+
+    * index
+
+  * existing_integrations
+  * upgrade_guide
+  * changelog
+  * wymeditor_development/ (as it already exists)
+
+Automate Taking Demo Screenshots for the Docs
+=============================================
+
+Screenshots are worth a thousand words.
+Use `grunt-autoshoot <https://github.com/Ferrari/grunt-autoshot>`_
+to take screenshots of the examples
+and update the docs to embed them.
+
+************
+Code Cleanup
+************
+
+JSHint the remaining first-party files
+======================================
+
+Only things we don't control
+should be in ``.jshintignore``.
+
+Don't use ``eval()``
+====================
+
+It's not necessary.
+
+Vendor Rangy
+============
+
+We should include Rangy via bower.
+
+*******
+Testing
+*******
+
+Eliminate the Selenium tests
+============================
+
+There are some bugs that can only be tested with native events,
+so we wrote Selenium tests for them.
+This kind of sucks,
+though,
+since it's a very separate concern.
+
+Instead,
+use one of the Java Applet-based real user event simulators.
+
+Candidates
+----------
+
+* Dojo's `DOHRobot <https://github.com/dojo/util/tree/master/doh/robot>`_.
+* Ephox `JSRobot <https://github.com/ephox/JSRobot>`_.
+
+Of the two,
+``DOHRobot`` seems to have more of an active community.
+``JSRobot`` is used to test TinyMCE, though.
 
 Run the Unit Tests in Every Browser on Every Build
---------------------------------------------------
+==================================================
 
 `Testling-CI <http://ci.testling.com/>`_ seems like the way to go for running
 our unit tests across our supported browsers. It won't work for our Selenium
 tests, but it will at least make it easy to catch regressions and the like when
 lazy developers \*cough\*me\*cough\* don't test in all of the IE's.
 
-Use travis-CI to run Selenium Tests in Chrome
----------------------------------------------
+Load all examples/tests on travis
+=================================
 
-It would be nice to run our Selenium tests in every supported browser on every
-commit, but it's at least easy to run them using Phantomjs inside travis-ci:
-http://about.travis-ci.org/docs/user/gui-and-headless-browsers/
-
-Find Something to run Selenium Tests in Other Supported Browsers
-----------------------------------------------------------------
-
-There has to be a thing. Find that thing, and then use it.
-
-Find a Better Way of Hosting the Demos
---------------------------------------
-
-Joyent has discontinued their no.de node PaaS that we previously used to host
-the demos. Either move to their `Nodejitsu <http://www.nodejitsu.com/>`_
-replacement, or find something else.
+Have travis load all of the examples and tests
+using phantomjs
+and verify that WYMeditor is at least finishing initialization.

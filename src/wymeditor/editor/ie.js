@@ -1,24 +1,6 @@
 /*jslint evil: true */
-/*
- * WYMeditor : what you see is What You Mean web-based editor
- * Copyright (c) 2005 - 2009 Jean-Francois Hovinne, http://www.wymeditor.org/
- * Dual licensed under the MIT (MIT-license.txt)
- * and GPL (GPL-license.txt) licenses.
- *
- * For further information visit:
- *        http://www.wymeditor.org/
- *
- * File Name:
- *        jquery.wymeditor.explorer.js
- *        MSIE specific class and functions.
- *        See the documentation for more info.
- *
- * File Authors:
- *        Jean-Francois Hovinne (jf.hovinne a-t wymeditor dotorg)
- *        Bermi Ferrer (wymeditor a-t bermi dotorg)
- *        Frédéric Palluel-Lafleur (fpalluel a-t gmail dotcom)
- *        Jonatan Lundin (jonatan.lundin a-t gmail dotcom)
- */
+/* global rangy, -$ */
+"use strict";
 
 WYMeditor.WymClassExplorer = function (wym) {
     this._wym = wym;
@@ -26,29 +8,20 @@ WYMeditor.WymClassExplorer = function (wym) {
 };
 
 WYMeditor.WymClassExplorer.prototype.initIframe = function (iframe) {
-    //This function is executed twice, though it is called once!
-    //But MSIE needs that, otherwise designMode won't work.
-    //Weird.
+    var wym = this, ieVersion;
+
     this._iframe = iframe;
     this._doc = iframe.contentWindow.document;
 
-    //add css rules from options
-    var styles = this._doc.styleSheets[0],
-      aCss = eval(this._options.editorStyles),
-      wym = this,
-      ieVersion;
-
-    this.addCssRules(this._doc, aCss);
-
     this._doc.title = this._wym._index;
 
-    //set the text direction
+    // Set the text direction
     jQuery('html', this._doc).attr('dir', this._options.direction);
 
-    //init html value
+    // Init html value
     jQuery(this._doc.body).html(this._wym._options.html);
 
-    //handle events
+    // Handle events
     this._doc.body.onfocus = function () {
         wym._doc.body.contentEditable = "true";
         wym._doc = iframe.contentWindow.document;
@@ -85,31 +58,24 @@ WYMeditor.WymClassExplorer.prototype.initIframe = function (iframe) {
     };
     */
 
-    //callback can't be executed twice, so we check
-    if (this._initialized) {
-
-        //pre-bind functions
-        if (jQuery.isFunction(this._options.preBind)) {
-            this._options.preBind(this);
-        }
-
-
-        //bind external events
-        this._wym.bindEvents();
-
-        //post-init functions
-        if (jQuery.isFunction(this._options.postInit)) {
-            this._options.postInit(this);
-        }
-
-        //add event listeners to doc elements, e.g. images
-        this.listen();
+    if (jQuery.isFunction(this._options.preBind)) {
+        this._options.preBind(this);
     }
 
-    this._initialized = true;
+    this._wym.bindEvents();
 
-    //init designMode
-    this._doc.designMode = "on";
+    if (jQuery.isFunction(this._options.postInit)) {
+        this._options.postInit(this);
+    }
+
+    // Add event listeners to doc elements, e.g. images
+    this.listen();
+
+    jQuery(wym._element).trigger(
+        WYMeditor.EVENTS.postIframeInitialization,
+        this._wym
+    );
+
     try {
         // (bermi's note) noticed when running unit tests on IE6
         // Is this really needed, it trigger an unexisting property on IE6
@@ -119,41 +85,19 @@ WYMeditor.WymClassExplorer.prototype.initIframe = function (iframe) {
     jQuery(this._element).trigger('wymeditor:iframe_loaded');
 };
 
-(function (editorLoadSkin) {
-    WYMeditor.WymClassExplorer.prototype.loadSkin = function () {
+(function (editorInitSkin) {
+    WYMeditor.WymClassExplorer.prototype.initSkin = function () {
         // Mark container items as unselectable (#203)
         // Fix for issue explained:
-        // http://stackoverflow.com/questions/1470932/ie8-iframe-designmode-loses-selection
-        jQuery(this._box).find(this._options.containerSelector).attr('unselectable', 'on');
+        // http://stackoverflow.com/questions/
+        // 1470932/ie8-iframe-designmode-loses-selection
+        jQuery(this._box).find(
+            this._options.containerSelector
+        ).attr('unselectable', 'on');
 
-        editorLoadSkin.call(this);
+        editorInitSkin.call(this);
     };
-}(WYMeditor.editor.prototype.loadSkin));
-
-/**
-    fixBluescreenOfDeath
-    ====================
-
-    In ie8 when using ie7 compatibility mode, certain combinations of CSS on
-    the iframe will trigger a bug that causes the rendering engine to give all
-    block-level editable elements a negative left position that puts them off of
-    the screen. This results in the editor looking blank (just the blue background)
-    and requires the user to move the mouse or manipulate the DOM to force a
-    re-render, which fixes the problem.
-
-    This workaround detects the negative position and then manipulates the DOM
-    to cause a re-render, which puts the elements back in position.
-
-    A real fix would be greatly appreciated.
-*/
-WYMeditor.WymClassExplorer.prototype.fixBluescreenOfDeath = function () {
-    var position = jQuery(this._doc).find('p').eq(0).position();
-    if (position !== null && typeof position !== 'undefined' && position.left < 0) {
-        jQuery(this._box).append('<br id="wym-bluescreen-bug-fix" />');
-        jQuery(this._box).find('#wym-bluescreen-bug-fix').remove();
-    }
-};
-
+}(WYMeditor.editor.prototype.initSkin));
 
 WYMeditor.WymClassExplorer.prototype._exec = function (cmd, param) {
     if (param) {
@@ -180,22 +124,15 @@ WYMeditor.WymClassExplorer.prototype.saveCaret = function () {
     this._doc.caretPos = this._doc.selection.createRange();
 };
 
-WYMeditor.WymClassExplorer.prototype.addCssRule = function (styles, oCss) {
-    // IE doesn't handle combined selectors (#196)
-    var selectors = oCss.name.split(','),
-        i;
-    for (i = 0; i < selectors.length; i++) {
-        styles.addRule(selectors[i], oCss.css);
-    }
-};
-
 WYMeditor.WymClassExplorer.prototype.insert = function (html) {
 
     // Get the current selection
-    var range = this._doc.selection.createRange();
+    var range = this._doc.selection.createRange(),
+        $selectionParents;
 
     // Check if the current selection is inside the editor
-    if (jQuery(range.parentElement()).parents().is(this._options.iframeBodySelector)) {
+    $selectionParents = jQuery(range.parentElement()).parents();
+    if ($selectionParents.is(this._options.iframeBodySelector)) {
         try {
             // Overwrite selection with provided html
             range.pasteHTML(html);
@@ -208,10 +145,12 @@ WYMeditor.WymClassExplorer.prototype.insert = function (html) {
 
 WYMeditor.WymClassExplorer.prototype.wrap = function (left, right) {
     // Get the current selection
-    var range = this._doc.selection.createRange();
+    var range = this._doc.selection.createRange(),
+        $selectionParents;
 
     // Check if the current selection is inside the editor
-    if (jQuery(range.parentElement()).parents().is(this._options.iframeBodySelector)) {
+    $selectionParents = jQuery(range.parentElement()).parents();
+    if ($selectionParents.is(this._options.iframeBodySelector)) {
         try {
             // Overwrite selection with provided html
             range.pasteHTML(left + range.text + right);
@@ -230,7 +169,9 @@ WYMeditor.WymClassExplorer.prototype.wrap = function (left, right) {
     @param containerType A string of an HTML tag that specifies the container
                          type to use for wrapping the node.
 */
-WYMeditor.WymClassExplorer.prototype.wrapWithContainer = function (node, containerType) {
+WYMeditor.WymClassExplorer.prototype.wrapWithContainer = function (
+    node, containerType
+) {
     var wym = this._wym,
         $wrappedNode,
         selection,
@@ -247,10 +188,12 @@ WYMeditor.WymClassExplorer.prototype.wrapWithContainer = function (node, contain
 WYMeditor.WymClassExplorer.prototype.unwrap = function () {
     // Get the current selection
     var range = this._doc.selection.createRange(),
+        $selectionParents,
         text;
 
     // Check if the current selection is inside the editor
-    if (jQuery(range.parentElement()).parents().is(this._options.iframeBodySelector)) {
+    $selectionParents = jQuery(range.parentElement()).parents();
+    if ($selectionParents.is(this._options.iframeBodySelector)) {
         try {
             // Unwrap selection
             text = range.text;
@@ -268,15 +211,16 @@ WYMeditor.WymClassExplorer.prototype.keyup = function (evt) {
         notValidRootContainers,
         name,
         parentName,
-        forbiddenMainContainer = false;
+        forbiddenMainContainer = false,
+        selectedNode;
 
     notValidRootContainers =
         wym.documentStructureManager.structureRules.notValidRootContainers;
     defaultRootContainer =
         wym.documentStructureManager.structureRules.defaultRootContainer;
-    this._selected_image = null;
+    this._selectedImage = null;
 
-    // If the inputted key cannont create a block element and is not a command,
+    // If the pressed key can't create a block element and is not a command,
     // check to make sure the selection is properly wrapped in a container
     if (!wym.keyCanCreateBlockElement(evt.which) &&
             evt.which !== WYMeditor.KEY.CTRL &&

@@ -1,67 +1,64 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<!--
- * WYMeditor : what you see is What You Mean web-based editor
- * Copyright (c) 2005 - 2009 Jean-Francois Hovinne, http://www.wymeditor.org/
- * Dual licensed under the MIT (MIT-license.txt)
- * and GPL (GPL-license.txt) licenses.
- *
- * For further information visit:
- *        http://www.wymeditor.org/
- *
- * File Name:
- *        04-multiple-instances.html
- *        WYMeditor integration example - multiple instances.
- *        See the documentation for more info.
- *
- * File Authors:
- *        Jean-Francois Hovinne - http://www.hovinne.com/
--->
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>WYMeditor</title>
-<script type="text/javascript" src="../jquery/jquery.js"></script>
-<script type="text/javascript" src="../wymeditor/jquery.wymeditor.min.js"></script>
-
-<script type="text/javascript">
-
-// Each textarea with class 'wymeditor' is replaced by a WYMeditor instance.
-
-jQuery(function() {
-    jQuery('.wymeditor').wymeditor({
-
-        html: '<p>Hello, World!<\/p>',
-        stylesheet: 'styles.css'
-
-    });
-});
-
-</script>
-
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>WYMeditor: Multiple Editor Instances</title>
+    <!-- build:css ../wymeditor/skins/default/skin.css -->
+    <link rel="stylesheet" type="text/css" href="../wymeditor/skins/default/skin.css" />
+    <!-- endbuild -->
 </head>
 
 <body>
-<h1>WYMeditor integration example - multiple instances</h1>
-<p><a href="http://www.wymeditor.org/">WYMeditor</a> is a web-based XHTML WYSIWYM editor.</p>
-<form method="post" action="">
-<textarea class="wymeditor"></textarea>
-<input type="submit" class="wymupdate" />
-</form>
+    <h1>WYMeditor: Multiple Editor Instances</h1>
+    <p><a href="http://www.wymeditor.org/">WYMeditor</a> is a web-based XHTML WYSIWYM editor.</p>
+    <p>You can use multiple WYMeditor instances on one page.</p>
+    <form method="post" action="">
+        <textarea class="wymeditor1">&lt;p&gt;I am editor 1&lt;/p&gt;</textarea>
+        <input type="submit" class="wymupdate" />
+    </form>
 
-<br />
+    <br />
+    <form method="post" action="">
+        <textarea class="wymeditor1">&lt;p&gt;I am the second editor 1&lt;/p&gt;</textarea>
+        <input type="submit" class="wymupdate" />
+    </form>
 
-<form method="post" action="">
-<textarea class="wymeditor"></textarea>
-<input type="submit" class="wymupdate" />
-</form>
+    <br />
+    <form method="post" action="">
+        <textarea class="wymeditor2"></textarea>
+        <input type="submit" class="wymupdate" />
+    </form>
 
-<br />
+    <br />
+    <form method="post" action="">
+        <textarea class="wymeditor3"></textarea>
+        <input type="submit" class="wymupdate" />
+    </form>
 
-<form method="post" action="">
-<textarea class="wymeditor"></textarea>
-<input type="submit" class="wymupdate" />
-</form>
+    <!-- build:js vendor/jquery/jquery.js -->
+    <!-- endbuild -->
+    <!-- build:js ../wymeditor/jquery.wymeditor.js -->
+    <script type="text/javascript" src="../test/load-src.dev.js"></script>
+    <script type="text/javascript">
+        loadWymSrc('../');
+    </script>
+    <!-- endbuild -->
 
+    <script type="text/javascript">
+        $(function() {
+            var options1 = {}
+            var options2 = {
+                html: '<p>Hello, World! I am editor 2<\/p>'
+            }
+            var options3 = {
+                html: '<p>Hello, World! I am editor 3<\/p>'
+            }
+            $('.wymeditor1').wymeditor(options1);
+            $('.wymeditor2').wymeditor(options2);
+            $('.wymeditor3').wymeditor(options3);
+        });
+    </script>
 </body>
-
 </html>

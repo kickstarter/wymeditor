@@ -1,4 +1,6 @@
-/*jslint evil: true, indent: 4 */
+/* jshint strict: false, maxlen: 90, evil: true */
+/* global -$, WYMeditor: true, console */
+
 /*@version @@VERSION */
 /**
     WYMeditor
@@ -32,7 +34,9 @@
 
 // Global WYMeditor namespace.
 if (typeof (WYMeditor) === 'undefined') {
-    WYMeditor = {};
+    /* jshint -W079 */
+    var WYMeditor = {};
+    /* jshint +W079 */
 }
 
 // Wrap the Firebug console in WYMeditor.console
@@ -41,9 +45,9 @@ if (typeof (WYMeditor) === 'undefined') {
         typeof console === 'undefined') {
         // No in-browser console logging available
         var names = [
-                "log", "debug", "info", "warn", "error", "assert", "dir", "dirxml",
-                "group", "groupEnd", "time", "timeEnd", "count", "trace", "profile",
-                "profileEnd"
+                "log", "debug", "info", "warn", "error", "assert", "dir",
+                "dirxml", "group", "groupEnd", "time", "timeEnd", "count",
+                "trace", "profile", "profileEnd"
             ],
             noOp = function () {},
             i;
@@ -52,7 +56,7 @@ if (typeof (WYMeditor) === 'undefined') {
         for (i = 0; i < names.length; i += 1) {
             WYMeditor.console[names[i]] = noOp;
         }
-    } else if (console) {
+    } else if (typeof console !== 'undefined') {
         // ie8+
         WYMeditor.console = console;
     } else if (window.console.firebug) {
@@ -80,12 +84,8 @@ jQuery.extend(WYMeditor, {
     INDEX               - A string replaced by the instance index.
     WYM_INDEX           - A string used to get/set the instance index.
     BASE_PATH           - A string replaced by WYMeditor's base path.
-    SKIN_PATH           - A string replaced by WYMeditor's skin path.
     WYM_PATH            - A string replaced by WYMeditor's main JS file path.
-    SKINS_DEFAULT_PATH  - The skins default base path.
-    SKINS_DEFAULT_CSS   - The skins default CSS file.
-    LANG_DEFAULT_PATH   - The language files default path.
-    IFRAME_BASE_PATH    - A string replaced by the designmode iframe's base path.
+    IFRAME_BASE_PATH    - String replaced by the designmode iframe's base path.
     IFRAME_DEFAULT      - The iframe's default base path.
     JQUERY_PATH         - A string replaced by the computed jQuery path.
     DIRECTION           - A string replaced by the text direction (rtl or ltr).
@@ -151,12 +151,7 @@ jQuery.extend(WYMeditor, {
     INDEX               : "{Wym_Index}",
     WYM_INDEX           : "wym_index",
     BASE_PATH           : "{Wym_Base_Path}",
-    CSS_PATH            : "{Wym_Css_Path}",
     WYM_PATH            : "{Wym_Wym_Path}",
-    SKINS_DEFAULT_PATH  : "skins/",
-    SKINS_DEFAULT_CSS   : "skin.css",
-    SKINS_DEFAULT_JS    : "skin.js",
-    LANG_DEFAULT_PATH   : "lang/",
     IFRAME_BASE_PATH    : "{Wym_Iframe_Base_Path}",
     IFRAME_DEFAULT      : "iframe/default/",
     JQUERY_PATH         : "{Wym_Jquery_Path}",
@@ -247,7 +242,8 @@ jQuery.extend(WYMeditor, {
 
     BLOCKING_ELEMENTS : ["table", "blockquote", "pre"],
 
-    // The remaining `MAIN_CONTAINERS` that are not considered `BLOCKING_ELEMENTS`
+    // The remaining `MAIN_CONTAINERS` that are not considered
+    // `BLOCKING_ELEMENTS`
     NON_BLOCKING_ELEMENTS : ["p", "div", "h1", "h2", "h3", "h4", "h5", "h6"],
 
     // The elements that define a type of list.
@@ -275,8 +271,8 @@ jQuery.extend(WYMeditor, {
     // in them.
     SELECTABLE_TABLE_ELEMENTS: ["td", "th", "caption"],
 
-    // Class for marking br elements used to space apart blocking elements in the
-    // editor.
+    // Class for marking br elements used to space apart blocking elements in
+    // the editor.
     BLOCKING_ELEMENT_SPACER_CLASS: "wym-blocking-element-spacer",
 
     // Class used to flag an element for removal by the xhtml parser so that
@@ -320,6 +316,11 @@ jQuery.extend(WYMeditor, {
         40,  // DOWN
         46   // DELETE
     ],
+
+    EVENTS : {
+        'postIframeInitialization': 'wym-postIframeInitialization',
+        'postBlockMaybeCreated': 'wym-postBlockMaybeCreated'
+    },
 
     // domNode.nodeType constants
     NODE : {
@@ -373,12 +374,6 @@ jQuery.extend(WYMeditor, {
         // Path to jQuery (for loading in pop-up dialogs)
         this._options.jQueryPath = this._options.jQueryPath ||
             WYMeditor.computeJqueryPath();
-        // Path to skin files
-        this._options.skinPath = this._options.skinPath ||
-            this._options.basePath + WYMeditor.SKINS_DEFAULT_PATH + this._options.skin + '/';
-        // Path to the language files
-        this._options.langPath = this._options.langPath ||
-            this._options.basePath + WYMeditor.LANG_DEFAULT_PATH;
         // The designmode iframe's base path
         this._options.iframeBasePath = this._options.iframeBasePath ||
             this._options.basePath + WYMeditor.IFRAME_DEFAULT;
@@ -409,15 +404,10 @@ jQuery.fn.wymeditor = function (options) {
 
         html:       "",
         basePath:   false,
-        skinPath:    false,
         wymPath:    false,
         iframeBasePath: false,
         jQueryPath: false,
-        styles: false,
-        stylesheet: false,
         skin:       "default",
-        initSkin:   true,
-        loadSkin:   true,
         lang:       "en",
         direction:  "ltr",
         customCommands: [],
@@ -454,13 +444,10 @@ jQuery.fn.wymeditor = function (options) {
 
         iframeHtml: String() +
             '<div class="wym_iframe wym_section">' +
-                '<iframe src="' + WYMeditor.IFRAME_BASE_PATH + 'wymiframe.html" ' +
-                    'onload="this.contentWindow.parent.WYMeditor.INSTANCES[' +
-                        WYMeditor.INDEX + '].initIframe(this)">' +
+                '<iframe src="' + WYMeditor.IFRAME_BASE_PATH + 'wymiframe.html">' +
                 '</iframe>' +
             "</div>",
 
-        editorStyles: [],
         toolsHtml: String() +
             '<div class="wym_tools wym_section">' +
                 '<h2>{Tools}</h2>' +
@@ -608,8 +595,6 @@ jQuery.fn.wymeditor = function (options) {
                     '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">' +
             '<html dir="' + WYMeditor.DIRECTION + '">' +
                 '<head>' +
-                    '<link rel="stylesheet" type="text/css" media="screen" ' +
-                        'href="' + WYMeditor.CSS_PATH + '" />' +
                     '<title>' + WYMeditor.DIALOG_TITLE + '</title>' +
                     '<script type="text/javascript" ' +
                         'src="' + WYMeditor.JQUERY_PATH + '"></script>' +
@@ -745,8 +730,6 @@ jQuery.fn.wymeditor = function (options) {
             '<body class="wym_dialog wym_dialog_preview" ' +
                 'onload="WYMeditor.INIT_DIALOG(' + WYMeditor.INDEX + ')"></body>',
 
-        dialogStyles: [],
-
         stringDelimiterLeft:  "{",
         stringDelimiterRight: "}",
 
@@ -763,7 +746,7 @@ jQuery.fn.wymeditor = function (options) {
         // Assigning to _editor because the return value from new isn't
         // actually used, but we need to use new to properly change the
         // prototype
-        var _editor = new WYMeditor.editor(jQuery(this), options);
+        this._wym = new WYMeditor.editor(jQuery(this), options);
     });
 };
 
@@ -872,14 +855,10 @@ WYMeditor.computeJqueryPath = function () {
 /********** DIALOGS **********/
 
 WYMeditor.INIT_DIALOG = function (index) {
-
     var wym = window.opener.WYMeditor.INSTANCES[index],
-        doc = window.document,
         selected = wym.selected(),
         dialogType = jQuery(wym._options.dialogTypeSelector).val(),
         sStamp = wym.uniqueStamp(),
-        styles,
-        aCss,
         tableOnClick;
 
     if (dialogType === WYMeditor.DIALOG_LINK) {
@@ -890,8 +869,8 @@ WYMeditor.INIT_DIALOG = function (index) {
         }
 
         // fix MSIE selection if link image has been clicked
-        if (!selected && wym._selected_image) {
-            selected = jQuery(wym._selected_image).parentsOrSelf(WYMeditor.A);
+        if (!selected && wym._selectedImage) {
+            selected = jQuery(wym._selectedImage).parentsOrSelf(WYMeditor.A);
         }
     }
 
@@ -899,12 +878,6 @@ WYMeditor.INIT_DIALOG = function (index) {
     if (jQuery.isFunction(wym._options.preInitDialog)) {
         wym._options.preInitDialog(wym, window);
     }
-
-    // add css rules from options
-    styles = doc.styleSheets[0];
-    aCss = eval(wym._options.dialogStyles);
-
-    wym.addCssRules(doc, aCss);
 
     // auto populate fields if selected container (e.g. A)
     if (selected) {
@@ -916,10 +889,16 @@ WYMeditor.INIT_DIALOG = function (index) {
     }
 
     // auto populate image fields if selected image
-    if (wym._selected_image) {
-        jQuery(wym._options.dialogImageSelector + " " + wym._options.srcSelector).val(jQuery(wym._selected_image).attr(WYMeditor.SRC));
-        jQuery(wym._options.dialogImageSelector + " " + wym._options.titleSelector).val(jQuery(wym._selected_image).attr(WYMeditor.TITLE));
-        jQuery(wym._options.dialogImageSelector + " " + wym._options.altSelector).val(jQuery(wym._selected_image).attr(WYMeditor.ALT));
+    if (wym._selectedImage) {
+        jQuery(
+            wym._options.dialogImageSelector + " " + wym._options.srcSelector
+        ).val(jQuery(wym._selectedImage).attr(WYMeditor.SRC));
+        jQuery(
+            wym._options.dialogImageSelector + " " + wym._options.titleSelector
+        ).val(jQuery(wym._selectedImage).attr(WYMeditor.TITLE));
+        jQuery(
+            wym._options.dialogImageSelector + " " + wym._options.altSelector
+        ).val(jQuery(wym._selectedImage).attr(WYMeditor.ALT));
     }
 
     jQuery(wym._options.dialogLinkSelector + " " +
@@ -994,9 +973,9 @@ WYMeditor.MAKE_TABLE_ONCLICK = function (wym) {
         var numRows = jQuery(wym._options.rowsSelector).val(),
             numColumns = jQuery(wym._options.colsSelector).val(),
             caption = jQuery(wym._options.captionSelector).val(),
-            summary = jQuery(wym._options.summarySelector).val(),
+            summary = jQuery(wym._options.summarySelector).val();
 
-            table = wym.insertTable(numRows, numColumns, caption, summary);
+        wym.insertTable(numRows, numColumns, caption, summary);
 
         window.close();
     };

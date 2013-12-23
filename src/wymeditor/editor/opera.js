@@ -1,21 +1,6 @@
 /*jslint evil: true */
-/*
- * WYMeditor : what you see is What You Mean web-based editor
- * Copyright (c) 2005 - 2009 Jean-Francois Hovinne, http://www.wymeditor.org/
- * Dual licensed under the MIT (MIT-license.txt)
- * and GPL (GPL-license.txt) licenses.
- *
- * For further information visit:
- *        http://www.wymeditor.org/
- *
- * File Name:
- *        jquery.wymeditor.opera.js
- *        Opera specific class and functions.
- *        See the documentation for more info.
- *
- * File Authors:
- *        Jean-Francois Hovinne (jf.hovinne a-t wymeditor dotorg)
- */
+/* global -$ */
+"use strict";
 
 WYMeditor.WymClassOpera = function (wym) {
     this._wym = wym;
@@ -27,46 +12,36 @@ WYMeditor.WymClassOpera.prototype.initIframe = function (iframe) {
     this._iframe = iframe;
     this._doc = iframe.contentWindow.document;
 
-    jQuery(this._element).trigger('wymeditor:iframe_loaded');
-
-    //add css rules from options
-    var styles = this._doc.styleSheets[0],
-        aCss = eval(this._options.editorStyles);
-
-    this.addCssRules(this._doc, aCss);
-
     this._doc.title = this._wym._index;
 
-    //set the text direction
+    // Set the text direction
     jQuery('html', this._doc).attr('dir', this._options.direction);
 
-    //init designMode
     this._doc.body.contentEditable = "true";
 
-    //init html value
+    // Init html value
     this._html(this._wym._options.html);
 
-    //pre-bind functions
     if (jQuery.isFunction(this._options.preBind)) {
         this._options.preBind(this);
     }
 
-    //bind external events
+    // Bind external events
     this._wym.bindEvents();
 
-    //bind editor keydown events
     jQuery(this._doc).bind("keydown", this.keydown);
-
-    //bind editor events
     jQuery(this._doc).bind("keyup", this.keyup);
-
-    //post-init functions
     if (jQuery.isFunction(this._options.postInit)) {
         this._options.postInit(this);
     }
 
-    //add event listeners to doc elements, e.g. images
+    // Add event listeners to doc elements, e.g. images
     this.listen();
+
+    jQuery(wym._element).trigger(
+        WYMeditor.EVENTS.postIframeInitialization,
+        this._wym
+    );
 };
 
 WYMeditor.WymClassOpera.prototype._exec = function (cmd, param) {
@@ -92,12 +67,7 @@ WYMeditor.WymClassOpera.prototype.selected = function() {
     }
 };
 
-WYMeditor.WymClassOpera.prototype.addCssRule = function(styles, oCss) {
-    styles.insertRule(
-            oCss.name + " {" + oCss.css + "}", styles.cssRules.length);
-};
-
-WYMeditor.WymClassOpera.prototype.keydown = function (evt) {
+WYMeditor.WymClassOpera.prototype.keydown = function(evt) {
     //'this' is the doc
     var wym = WYMeditor.INSTANCES[this.title],
         sel = wym._iframe.contentWindow.getSelection(),
