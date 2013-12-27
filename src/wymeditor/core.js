@@ -319,7 +319,8 @@ jQuery.extend(WYMeditor, {
 
     EVENTS : {
         'postIframeInitialization': 'wym-postIframeInitialization',
-        'postBlockMaybeCreated': 'wym-postBlockMaybeCreated'
+        'postBlockMaybeCreated': 'wym-postBlockMaybeCreated',
+        'documentationHTMLUpdated': 'wym-documentationHTMLUpdated'
     },
 
     // domNode.nodeType constants

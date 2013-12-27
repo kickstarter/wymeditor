@@ -439,7 +439,10 @@ WYMeditor.editor.prototype.exec = function (cmd, args) {
 
     if (cmd !== WYMeditor.TOGGLE_HTML) {
         this.update_selections();
-        this._element.trigger('wymeditor:doc_html_updated', [this, jQuery(this._doc.body).html()]);
+        this._element.trigger(
+            WYMeditor.EVENTS.documentationHTMLUpdated,
+            [this, jQuery(this._doc.body).html()]
+        );
     }
 };
 
@@ -1531,7 +1534,10 @@ WYMeditor.editor.prototype.insert_next = function (html, direction) {
         jQuery(this._doc.body).prepend(html);
     }
     jQuery(this._element)
-      .trigger('wymeditor:doc_html_updated', [this, jQuery(this._doc.body).html()]);
+      .trigger(
+          WYMeditor.EVENTS.documentationHTMLUpdated,
+          [this, jQuery(this._doc.body).html()]
+      );
 };
 
 WYMeditor.editor.prototype.insert_empty_p_if_next_block_is_uneditable = function () {

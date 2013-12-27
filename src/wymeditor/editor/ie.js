@@ -81,8 +81,6 @@ WYMeditor.WymClassExplorer.prototype.initIframe = function (iframe) {
         // Is this really needed, it trigger an unexisting property on IE6
         this._doc = iframe.contentWindow.document;
     } catch (e) {}
-
-    jQuery(this._element).trigger('wymeditor:iframe_loaded');
 };
 
 (function (editorInitSkin) {
@@ -273,7 +271,7 @@ WYMeditor.WymClassExplorer.prototype.keyup = function (evt) {
 
     jQuery(wym._element)
       .trigger(
-          'wymeditor:doc_html_updated',
+          WYMeditor.EVENTS.documentationHTMLUpdated,
           [wym, jQuery(wym._doc.body).html()]
       );
 };
