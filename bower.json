@@ -5,5 +5,16 @@
     "requirejs": "~2.1.4",
     "jquery": "~1.4.4"
   },
-  "devDependencies": {}
+  "devDependencies": {},
+  "ignore": [
+    "_layouts/",
+    "docs/",
+    "website-media/",
+    "wym_selenium/",
+    ".*",
+    "src/examples/",
+    "src/jquery/",
+    "src/test/",
+    "src/main.js"
+  ]
 }
