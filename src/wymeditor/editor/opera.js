@@ -87,7 +87,7 @@ WYMeditor.WymClassOpera.prototype.keyup = function (evt) {
     var wym = WYMeditor.INSTANCES[this.title];
     wym._selected_image = null;
     $(wym._element).trigger(
-        WYMeditor.EVENTS.documentationHTMLUpdated,
+        WYMeditor.EVENTS.documentHTMLUpdated,
         [wym, $(wym._doc.body).html()]);
 };
 

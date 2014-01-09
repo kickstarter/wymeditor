@@ -440,7 +440,7 @@ WYMeditor.editor.prototype.exec = function (cmd, args) {
     if (cmd !== WYMeditor.TOGGLE_HTML) {
         this.update_selections();
         this._element.trigger(
-            WYMeditor.EVENTS.documentationHTMLUpdated,
+            WYMeditor.EVENTS.documentHTMLUpdated,
             [this, jQuery(this._doc.body).html()]
         );
     }
@@ -1535,7 +1535,7 @@ WYMeditor.editor.prototype.insert_next = function (html, direction) {
     }
     jQuery(this._element)
       .trigger(
-          WYMeditor.EVENTS.documentationHTMLUpdated,
+          WYMeditor.EVENTS.documentHTMLUpdated,
           [this, jQuery(this._doc.body).html()]
       );
 };

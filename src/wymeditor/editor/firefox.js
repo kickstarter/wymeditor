@@ -210,7 +210,7 @@ WYMeditor.WymClassMozilla.prototype.keyup = function (evt) {
     }
     jQuery(wym._element)
       .trigger(
-          WYMeditor.EVENTS.documentationHTMLUpdated,
+          WYMeditor.EVENTS.documentHTMLUpdated,
           [wym, jQuery(wym._doc.body).html()]
       );
 };
