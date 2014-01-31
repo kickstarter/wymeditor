@@ -2628,7 +2628,7 @@ WYMeditor.editor.prototype._insertList = function (listType) {
 
     jQuery.each(ranges, function () {
         if (this.collapsed) {
-            wym._ensureListItem(wym.selected());
+            wym._ensureListItem(wym.selected(), listType);
         }
         jQuery.each(this.getNodes(), function () {
             wym._ensureListItem(this, listType);
