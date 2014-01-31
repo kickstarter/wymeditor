@@ -2603,9 +2603,8 @@ WYMeditor.editor.prototype._insertList = function (listType) {
     var wym = this._wym,
         sel = rangy.getIframeSelection(this._iframe),
         listItems,
-        rootList,
-        selectedBlock,
-        potentialListBlock;
+        ranges = this.selection().getAllRanges(),
+        rootList;
 
     listItems = wym._getSelectedListItems(sel);
 
@@ -2627,19 +2626,43 @@ WYMeditor.editor.prototype._insertList = function (listType) {
 
     }
 
-    // If we've selected a block-level item that's appropriate to convert in to a list,
-    // convert it.
-    selectedBlock = this.selected();
-    // TODO: Use `_containerRules['root']` minus the ol/ul and
-    // `_containerRules['contentsCanConvertToList']
-    potentialListBlock = this.findUp(selectedBlock, WYMeditor.POTENTIAL_LIST_ELEMENTS);
-    if (potentialListBlock) {
-        this._convertToList(potentialListBlock, listType);
-        return true;
-    }
+    jQuery.each(ranges, function () {
+        if (this.collapsed) {
+            wym._ensureListItem(wym.selected());
+        }
+        jQuery.each(this.getNodes(), function () {
+            wym._ensureListItem(this, listType);
+        });
+    });
 
     // The user has something selected that wouldn't be a valid list
     return false;
+};
+
+WYMeditor.editor.prototype._ensureListItem = function (selectedBlock, listType) {
+    // If we've selected a block-level item that's appropriate to convert in to a list,
+    // convert it.
+    //
+    // TODO: Use `_containerRules['root']` minus the ol/ul and
+    // `_containerRules['contentsCanConvertToList']
+    var wym = this._wym,
+        potentialListBlock = wym.findUp(selectedBlock, WYMeditor.POTENTIAL_LIST_ELEMENTS),
+        $potentialListBlock,
+        $prev_next_list;
+    if (potentialListBlock) {
+        $potentialListBlock = jQuery(potentialListBlock);
+        $prev_next_list =
+            $potentialListBlock.prev(listType)
+            .add($potentialListBlock.next(listType));
+        if ($prev_next_list.length === 1) {
+            $prev_next_list.append(
+                wym._convertToListItem(jQuery(potentialListBlock))
+            );
+        } else {
+            wym._convertToList(potentialListBlock, listType);
+        }
+        return true;
+    }
 };
 
 WYMeditor.editor.prototype._changeListType = function (list, listType) {
@@ -2648,8 +2671,21 @@ WYMeditor.editor.prototype._changeListType = function (list, listType) {
     return WYMeditor.changeNodeType(list, listType);
 };
 
+WYMeditor.editor.prototype._convertToListItem = function ($blockElement) {
+    var $list_items = jQuery([]);
+    $blockElement.each(function () {
+        var $this = jQuery(this),
+            $li = jQuery('<li></li>');
+        $li.append($this.html());
+        $this.remove();
+        $list_items = $list_items.add($li);
+    });
+    return $list_items;
+};
+
 WYMeditor.editor.prototype._convertToList = function (blockElement, listType) {
     var $blockElement = jQuery(blockElement),
+        wym = this._wym,
         newListHtml,
         $newList;
 
@@ -2662,17 +2698,18 @@ WYMeditor.editor.prototype._convertToList = function (blockElement, listType) {
 
         // This is a main container block, so we can just replace it with the
         // list structure
+        $newList = jQuery(newListHtml);
+        $newList.empty();
+        $blockElement.after($newList);
+        $newList.append(wym._convertToListItem($blockElement));
+        $blockElement.remove();
+    } else {
+        // We're converting a block that's not a main container, so we need to nest
+        // this list around its contents and NOT remove the container (eg. a td
+        // node).
         $blockElement.wrapInner(newListHtml);
         $newList = $blockElement.children();
-        $newList.unwrap();
-
-        return $newList.get(0);
     }
-    // We're converting a block that's not a main container, so we need to nest
-    // this list around its contents and NOT remove the container (eg. a td
-    // node).
-    $blockElement.wrapInner(newListHtml);
-    $newList = $blockElement.children();
 
     return $newList.get(0);
 };
