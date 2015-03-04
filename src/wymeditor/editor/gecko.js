@@ -109,10 +109,17 @@ WYMeditor.WymClassGecko.prototype._exec = function (cmd, param) {
     return true;
 };
 
+var $lastFocusedP = jQuery([]);
+
 //keydown handler, mainly used for keyboard shortcuts
 WYMeditor.WymClassGecko.prototype.keydown = function (evt) {
     //'this' is the doc
-    var wym = WYMeditor.INSTANCES[this.title];
+    var wym = WYMeditor.INSTANCES[this.title],
+      $p = jQuery(wym.selection().focusNode).closest('p');
+
+    if ($p.length) {
+        $lastFocusedP = $p;
+    }
 
     if (evt.ctrlKey) {
         if (evt.which === 66) {
@@ -156,7 +163,7 @@ WYMeditor.WymClassGecko.prototype.keyup = function (evt) {
             !evt.ctrlKey) {
 
         container = wym.selectedContainer();
-        name = container.tagName.toLowerCase();
+        name = container ? container.tagName.toLowerCase() : 'body';
         if (container.parentNode) {
             parentName = container.parentNode.tagName.toLowerCase();
         }
@@ -175,6 +182,7 @@ WYMeditor.WymClassGecko.prototype.keyup = function (evt) {
             wym._exec(WYMeditor.FORMAT_BLOCK, defaultRootContainer);
             wym.fixBodyHtml();
         }
+
     }
 
     // If we potentially created a new block level element or moved to a new
@@ -199,6 +207,11 @@ WYMeditor.WymClassGecko.prototype.keyup = function (evt) {
         // Fix formatting if necessary
         wym.fixBodyHtml();
     }
+    jQuery(wym._element)
+      .trigger(
+          WYMeditor.EVENTS.documentHTMLUpdated,
+          [wym, jQuery(wym._doc.body).html()]
+      );
 };
 
 WYMeditor.WymClassGecko.prototype.click = function () {

@@ -1,4 +1,6 @@
 .*swp
+.*un~
+dist
 node_modules
 compiler.jar
 chef/*

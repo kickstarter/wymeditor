@@ -18,8 +18,8 @@ WYMeditor.WymClassWebKit.prototype.initIframe = function (iframe) {
     // Set the text direction
     jQuery('html', wym._doc).attr('dir', wym._options.direction);
 
-    // Init designMode
-    wym._doc.designMode = "on";
+    //init designMode
+    this._doc.body.contentEditable = "true";
 
     // Init html value
     if (wym._wym._options.html) {
@@ -160,8 +160,8 @@ WYMeditor.WymClassWebKit.prototype.keyup = function (evt) {
             !evt.ctrlKey) {
 
         container = wym.selectedContainer();
-        name = container.tagName.toLowerCase();
-        if (container.parentNode) {
+        name = container ? container.tagName.toLowerCase() : 'body';
+        if (container && container.parentNode) {
             parentName = container.parentNode.tagName.toLowerCase();
         }
 
@@ -203,4 +203,10 @@ WYMeditor.WymClassWebKit.prototype.keyup = function (evt) {
         // Fix formatting if necessary
         wym.fixBodyHtml();
     }
+
+    jQuery(wym._element)
+      .trigger(
+          WYMeditor.EVENTS.documentHTMLUpdated,
+          [wym, jQuery(wym._doc.body).html()]
+      );
 };
