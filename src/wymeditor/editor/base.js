@@ -61,8 +61,10 @@ WYMeditor.editor.prototype.init = function () {
     this.parser = null;
     this.helper = null;
 
-    SaxListener = new WYMeditor.XhtmlSaxListener();
-    this.parser = new WYMeditor.XhtmlParser(SaxListener);
+    if (!this._options.disable_sanitization) {
+        SaxListener = new WYMeditor.XhtmlSaxListener();
+        this.parser = new WYMeditor.XhtmlParser(SaxListener);
+    }
 
     this.helper = new WYMeditor.XmlHelper();
 
@@ -122,17 +124,21 @@ WYMeditor.editor.prototype.init = function () {
 
     for (i = 0; i < aTools.length; i += 1) {
         oTool = aTools[i];
-        sTool = '';
-        if (oTool.name && oTool.title) {
-            sTool = wym._options.toolsItemHtml;
+        if (oTool.html) {
+            sTool = oTool.html;
+        } else {
+            sTool = '';
+            if (oTool.name && oTool.title) {
+                sTool = wym._options.toolsItemHtml;
+            }
+            sTool = h.replaceAll(sTool, WYMeditor.TOOL_NAME, oTool.name);
+            sTool = h.replaceAll(
+                sTool,
+                WYMeditor.TOOL_TITLE,
+                wym._options.stringDelimiterLeft + oTool.title + wym._options.stringDelimiterRight
+            );
+            sTool = h.replaceAll(sTool, WYMeditor.TOOL_CLASS, oTool.css);
         }
-        sTool = h.replaceAll(sTool, WYMeditor.TOOL_NAME, oTool.name);
-        sTool = h.replaceAll(
-            sTool,
-            WYMeditor.TOOL_TITLE,
-            wym._options.stringDelimiterLeft + oTool.title + wym._options.stringDelimiterRight
-        );
-        sTool = h.replaceAll(sTool, WYMeditor.TOOL_CLASS, oTool.css);
         sTools += sTool;
     }
 
@@ -249,10 +255,10 @@ WYMeditor.editor.prototype.bindEvents = function () {
         $html_val;
 
     // Handle click events on tools buttons
-    jQuery(this._box).find(this._options.toolSelector).click(function () {
+    jQuery(this._box).find(this._options.toolSelector).click(function (e) {
         wym._iframe.contentWindow.focus(); //See #154
         wym.exec(jQuery(this).attr(WYMeditor.NAME));
-        return false;
+        e.preventDefault();
     });
 
     // Handle click events on containers buttons
@@ -274,8 +280,13 @@ WYMeditor.editor.prototype.bindEvents = function () {
         jQuery(this).toggleClass('hasfocus');
     });
 
+    //if external js updates this._element, suck it into the box
+    this._element.bind('change', function () {
+        jQuery(wym._doc.body).html(jQuery(this).val());
+    });
+
     // Handle click events on classes buttons
-    jQuery(this._box).find(this._options.classSelector).click(function () {
+    jQuery(this._box).find(this._options.classSelector).click(function (e) {
         var aClasses = eval(wym._options.classesItems),
             sName = jQuery(this).attr(WYMeditor.NAME),
 
@@ -287,12 +298,12 @@ WYMeditor.editor.prototype.bindEvents = function () {
             wym.toggleClass(sName, jqexpr);
         }
         wym._iframe.contentWindow.focus(); //See #154
-        return false;
+        e.preventDefault();
     });
 
     // Handle update event on update element
     jQuery(this._options.updateSelector).bind(this._options.updateEvent, function () {
-        wym.update();
+        wym.update(true);
     });
 };
 
@@ -354,7 +365,11 @@ WYMeditor.editor.prototype.html = function (html) {
     enforce a valid, well-formed, semantic xhtml result.
 */
 WYMeditor.editor.prototype.xhtml = function () {
-    return this.parser.parse(this._html());
+    if (!this._options.disable_sanitization) {
+        return this.parser.parse(this._html());
+    } else {
+        return this._html();
+    }
 };
 
 /**
@@ -369,8 +384,8 @@ WYMeditor.editor.prototype.xhtml = function () {
     matching the designMode execCommand strategy (and falling through to
     execCommand in some cases).
 */
-WYMeditor.editor.prototype.exec = function (cmd) {
-    var container, custom_run, _this = this;
+WYMeditor.editor.prototype.exec = function (cmd, args) {
+    var container, custom_run, _this = this, all_custom_commands, $selected_a;
     switch (cmd) {
 
     case WYMeditor.CREATE_LINK:
@@ -378,6 +393,20 @@ WYMeditor.editor.prototype.exec = function (cmd) {
         if (container || this._selectedImage) {
             this.dialog(WYMeditor.DIALOG_LINK);
         }
+        break;
+
+    case WYMeditor.UNLINK:
+        if (this.selection && this.selection_collapsed()) {
+            $selected_a = this.selected_parents_contains('a');
+            if ($selected_a.length) {
+                $selected_a.each(function () {
+                    //inspired by jquery unwrap
+                    jQuery(this).replaceWith(this.childNodes);
+                });
+                break;
+            }
+        }
+        this._exec(cmd);
         break;
 
     case WYMeditor.INSERT_IMAGE:
@@ -393,7 +422,9 @@ WYMeditor.editor.prototype.exec = function (cmd) {
         break;
 
     case WYMeditor.TOGGLE_HTML:
-        this.update();
+        jQuery(this._box)
+          .find(this._options.htmlValSelector).not('.hasfocus')
+          .val(this.xhtml()); //#147
         this.toggleHtml();
         break;
 
@@ -419,11 +450,12 @@ WYMeditor.editor.prototype.exec = function (cmd) {
 
 
     default:
-        custom_run = false;
-        jQuery.each(this._options.customCommands, function () {
+        all_custom_commands = jQuery.merge([], this._options.customCommands);
+        jQuery.merge(all_custom_commands, WYMeditor.CUSTOM_COMMANDS);
+        jQuery.each(all_custom_commands, function () {
             if (cmd === this.name) {
                 custom_run = true;
-                this.run.apply(_this);
+                this.run.apply(_this, args);
                 return false;
             }
         });
@@ -431,6 +463,14 @@ WYMeditor.editor.prototype.exec = function (cmd) {
             this._exec(cmd);
         }
         break;
+    }
+
+    if (cmd !== WYMeditor.TOGGLE_HTML) {
+        this.update_selections();
+        this._element.trigger(
+            WYMeditor.EVENTS.documentHTMLUpdated,
+            [this, jQuery(this._doc.body).html()]
+        );
     }
 };
 
@@ -1070,8 +1110,12 @@ WYMeditor.editor.prototype.status = function (sMessage) {
 
     Update the element and textarea values.
 */
-WYMeditor.editor.prototype.update = function () {
+WYMeditor.editor.prototype.update = function (is_submitting) {
     var html;
+
+    if (this._options.before_update && is_submitting) {
+        this._options.before_update.apply(this);
+    }
 
     html = this.xhtml();
     jQuery(this._element).val(html);
@@ -1381,7 +1425,23 @@ WYMeditor.editor.prototype.dialog = function (dialogType, dialogFeatures, bodyHt
     Show/Hide the HTML textarea.
 */
 WYMeditor.editor.prototype.toggleHtml = function () {
-    jQuery(this._box).find(this._options.htmlSelector).toggle();
+    var $html_box = jQuery(this._box).find(this._options.htmlSelector),
+        $iframe_box = jQuery(this._box).find('.wym_iframe'),
+        $button = this._box.find('.wym_tools_html');
+    if (!$html_box.is(':visible')) {
+        $html_box.show();
+        $html_box.find('textarea').height($iframe_box.height() - 10);
+        $html_box.find('textarea').width($iframe_box.width() - 10);
+        $button.addClass('selected');
+        $iframe_box.css('visibility', 'hidden');
+        jQuery(this._box).find('.ui-resizable-handle').hide();
+    } else {
+        $html_box.hide();
+        $button.removeClass('selected');
+        jQuery(this._box).find('.ui-resizable-handle').show();
+        $iframe_box.css('visibility', 'visible');
+        jQuery(this._doc).focus();
+    }
 };
 
 WYMeditor.editor.prototype.uniqueStamp = function () {
@@ -1600,6 +1660,17 @@ WYMeditor.editor.prototype.paste = function (str) {
             }
         }
     }
+
+    // Do some minor cleanup (#131)
+
+    if (jQuery(container).text() === '') {
+        jQuery(container).remove();
+    }
+    // And remove br (if editor was empty)
+    jQuery('body > br', this._doc).remove();
+
+    // Restore focus
+    this.setFocusToNode(sel.focusNode);
 };
 
 WYMeditor.editor.prototype.insert = function (html) {
@@ -1617,6 +1688,142 @@ WYMeditor.editor.prototype.insert = function (html) {
         // Fall back to the internal paste function if there's no selection
         this.paste(html);
     }
+};
+
+WYMeditor.editor.prototype.insertBlock = function (html) {
+    // Thanks to Tim Down:
+    // http://groups.google.com/group/rangy/browse_thread/thread/2d788fc867e8cd54
+    var sel = this.selection(),
+        blockElement,
+        focusNode = sel.focusNode,
+        focusOffset = sel.focusOffset,
+        insert_next_direction = 'after';
+
+    function getBlockContainer(node) {
+        return jQuery(node).closest('div, p, h1, h2, h3, embed, cite')[0];
+    }
+
+    if (focusNode) {
+        blockElement = getBlockContainer(focusNode);
+        if (blockElement && (blockElement !== focusNode)) {
+          // Test if we have a text node that needs to be split
+            if (focusNode.nodeType === 3 && focusOffset > 0 && focusOffset <
+                    focusNode.length) {
+                rangy.dom.splitDataNode(focusNode, focusOffset);
+            }
+            // Split the block
+            rangy.CssClassApplier.util.splitNodeAt(blockElement, focusNode,
+                    focusOffset);
+        }
+    }
+
+    if (focusOffset === 0) {
+        insert_next_direction = 'before';
+    }
+
+    sel.deleteFromDocument();
+
+    this.insert_next(html, insert_next_direction);
+};
+
+WYMeditor.editor.prototype.insertText = function (text) {
+    var sel = this.selection(), range;
+    range = sel.getRangeAt(0);
+    range.deleteContents();
+    range.insertNode(document.createTextNode(text));
+};
+
+WYMeditor.editor.prototype.insert_next = function (html, direction) {
+    // Do we have a selection?
+    var selection = this.selected(),
+        $selection_node = jQuery(selection),
+        $closest_blockquote = $selection_node.closest('blockquote'),
+        $closest_block_element,
+        $test;
+
+    if (!direction) {
+        direction = 'after';
+    }
+
+    if (selection !== null) {
+        // Overwrite selection with provided html
+        if ($selection_node.is('body')) {
+            if (direction === 'after') {
+                $selection_node.append(html);
+            } else {
+                $selection_node.prepend(html);
+            }
+        } else {
+            // we have to look for blockquote's first, because blockquotes are
+            // comprised of Ps
+            if ($closest_blockquote.length) {
+                if (direction === 'after') {
+                    $closest_blockquote.after(html);
+                } else {
+                    $closest_blockquote.before(html);
+                }
+            } else {
+                $closest_block_element = $selection_node.closest('div, p, h1, h2, h3, embed, cite');
+
+                if ($closest_block_element.length) {
+                    if (direction === 'after') {
+                        $closest_block_element.after(html);
+                    } else {
+                        $closest_block_element.before(html);
+                    }
+                } else {
+                    // this catches cases when the focused node has no block element
+                    // parent. for example in chrome: rangy creates a span as a child of
+                    // body when the iframe is unselected (so it should return no
+                    // selection) and empty, and returns that as the selection
+                    if (direction === 'after') {
+                        $selection_node.closest('body').append(html);
+                    } else {
+                        $selection_node.closest('body').prepend(html);
+                    }
+                }
+            }
+
+            // Remove current selected block, if it's empty.
+            $test = $selection_node.clone();
+            // Firefox likes to add weird empty BR tags.
+            // Rangy likes to add random spans
+            $test.find('br, span').remove();
+            if ($test.is(':empty')) {
+                $selection_node.remove();
+            }
+            $test.remove();
+        }
+    } else {
+        jQuery(this._doc.body).prepend(html);
+    }
+    jQuery(this._element)
+      .trigger(
+          WYMeditor.EVENTS.documentHTMLUpdated,
+          [this, jQuery(this._doc.body).html()]
+      );
+};
+
+WYMeditor.editor.prototype.insert_empty_p_if_next_block_is_uneditable = function () {
+    var $uneditable = jQuery('[contenteditable=false]', this._doc);
+    $uneditable.each(function () {
+        var $this = jQuery(this),
+          $next = $this.next();
+        if (
+            $next.length &&
+              (
+               ($next[0].contentEditable !== 'false') &&
+               !$next.is('span.rangySelectionBoundary') //rangy
+              )
+          ) {
+            if (!$next.height()) {
+                $next.append('&nbsp;');
+            }
+            return;
+        } else {
+            $this.after('<p>&nbsp;</p>');
+        }
+    });
 };
 
 WYMeditor.editor.prototype.wrap = function (left, right) {
@@ -1933,7 +2140,6 @@ WYMeditor.editor.prototype._indentSingleItem = function (listItem) {
         $liToIndent.append($spacerContents);
         $spacer.remove();
     }
-
 };
 
 /**
@@ -2835,8 +3041,6 @@ WYMeditor.editor.prototype.restoreSelectionAfterManipulation = function (manipul
     editor.insertOrderedlist
     ========================
 
-    Convert the selected block in to an ordered list.
-
     If the selection is already inside a list, switch the type of the nearest
     parent list to an `<ol>`. If the selection is in a block element that can be a
     valid list, place that block element's contents inside an ordered list.
@@ -2998,8 +3202,21 @@ WYMeditor.editor.prototype._changeListType = function (list, listType) {
     return WYMeditor.changeNodeType(list, listType);
 };
 
+WYMeditor.editor.prototype._convertToListItem = function ($blockElement) {
+    var $list_items = jQuery([]);
+    $blockElement.each(function () {
+        var $this = jQuery(this),
+            $li = jQuery('<li></li>');
+        $li.append($this.html());
+        $this.remove();
+        $list_items = $list_items.add($li);
+    });
+    return $list_items;
+};
+
 WYMeditor.editor.prototype._convertToList = function (blockElement, listType) {
     var $blockElement = jQuery(blockElement),
+        wym = this._wym,
         newListHtml,
         $newList;
 
@@ -3012,17 +3229,18 @@ WYMeditor.editor.prototype._convertToList = function (blockElement, listType) {
 
         // This is a main container block, so we can just replace it with the
         // list structure
+        $newList = jQuery(newListHtml);
+        $newList.empty();
+        $blockElement.after($newList);
+        $newList.append(wym._convertToListItem($blockElement));
+        $blockElement.remove();
+    } else {
+        // We're converting a block that's not a main container, so we need to nest
+        // this list around its contents and NOT remove the container (eg. a td
+        // node).
         $blockElement.wrapInner(newListHtml);
         $newList = $blockElement.children();
-        $newList.unwrap();
-
-        return $newList.get(0);
     }
-    // We're converting a block that's not a main container, so we need to nest
-    // this list around its contents and NOT remove the container (eg. a td
-    // node).
-    $blockElement.wrapInner(newListHtml);
-    $newList = $blockElement.children();
 
     return $newList.get(0);
 };
@@ -3329,6 +3547,9 @@ WYMeditor.editor.prototype.listen = function () {
     // Don't use jQuery.find() on the iframe body
     // because of MSIE + jQuery + expando issue (#JQ1143)
 
+    jQuery(this._doc.body).bind("mouseup keyup change", function (e) {
+        wym.update_selections.apply(wym, [ e ]);
+    });
     jQuery(wym._doc.body).bind("mousedown", function (e) {
         wym.mousedown(e);
     });
@@ -3363,6 +3584,51 @@ WYMeditor.editor.prototype.mousedown = function (evt) {
     }
 };
 
+WYMeditor.editor.prototype.update_selections = function () {
+    var wym = this;
+    wym._box.find('.wym_tools ul > li:not(.wym_tools_html)')
+      .removeClass('selected')
+      .removeClass('partially_selected');
+
+    if (this.selected_parents_contains('b').length) {
+        wym._box.find('.wym_tools_strong').addClass('selected');
+    }
+    if (this.selected_parents_contains('i').length) {
+        wym._box.find('.wym_tools_emphasis').addClass('selected');
+    }
+    if (this.selected_parents_contains('a').length) {
+        wym._box.find('.wym_tools_link, .wym_tools_unlink').addClass('selected');
+    }
+    if (this.selected_parents_contains('li').length) {
+        wym._box.find('.wym_tools_unordered_list').addClass('selected');
+    }
+    if (this.selected_parents_contains('h1').length) {
+        wym._box.find('.wym_tools_header').addClass('selected');
+    }
+    if (this.selected_parents_contains('blockquote').length) {
+        wym._box.find('.wym_tools_blockquote').addClass('selected');
+    }
+
+    jQuery.each(['b', 'i', 'a', 'li', 'ul'], function () {
+        var matches = wym.selected_contains(this);
+        if (matches.length) {
+            if (this === 'b') {
+                wym._box.find('.wym_tools_strong').addClass('partially_selected');
+            } else if (this === 'i') {
+                wym._box.find('.wym_tools_emphasis').addClass('partially_selected');
+            } else if (this === 'a') {
+                wym._box.find('.wym_tools_link, .wym_tools_unlink').addClass('partially_selected');
+            } else if (this === 'li' || this === 'ul') {
+                wym._box.find('.wym_tools_unordered_list').addClass('partially_selected');
+            } else if (this === 'h1') {
+                wym._box.find('.wym_tools_header').addClass('partially_selected');
+            } else if (this === 'blockquote') {
+                wym._box.find('.wym_tools_blockquote').addClass('partially_selected');
+            }
+        }
+    });
+};
+
 /**
     WYMeditor.editor.initSkin
     =========================
@@ -3385,3 +3651,4 @@ WYMeditor.editor.prototype.initSkin = function () {
         );
     }
 };
+

@@ -8,16 +8,10 @@ WYMeditor.WymClassTrident = function (wym) {
 };
 
 WYMeditor.WymClassTrident.prototype.initIframe = function (iframe) {
+    var wym = this, ieVersion;
     this._iframe = iframe;
     this._doc = iframe.contentWindow.document;
 
-    if (this._doc.designMode !== "On") {
-        this._doc.designMode = "On";
-        // Initializing designMode triggers the load event again, thus
-        // triggering this method again. We can short-circuit this run and do
-        // all of the work in the next trigger
-        return false;
-    }
     this._doc.title = this._wym._index;
 
     // Set the text direction
@@ -31,16 +25,22 @@ WYMeditor.WymClassTrident.prototype.initIframe = function (iframe) {
     }
 
     // Handle events
-    var wym = this;
-
     this._doc.body.onfocus = function () {
-        wym._doc.designMode = "on";
+        wym._doc.body.contentEditable = "true";
         wym._doc = iframe.contentWindow.document;
     };
     this._doc.onbeforedeactivate = function () {
         wym.saveCaret();
     };
     jQuery(this._doc).bind('keyup', wym.keyup);
+    // Workaround for an ie8 => ie7 compatibility mode bug triggered
+    // intermittently by certain combinations of CSS on the iframe
+    ieVersion = parseInt(jQuery.browser.version, 10);
+    if (ieVersion >= 8 && ieVersion < 9) {
+        jQuery(this._doc).bind('keydown', function () {
+            wym.fixBluescreenOfDeath();
+        });
+    }
     this._doc.onkeyup = function () {
         wym.saveCaret();
     };
@@ -48,14 +48,18 @@ WYMeditor.WymClassTrident.prototype.initIframe = function (iframe) {
         wym.saveCaret();
     };
 
-    this._doc.body.onbeforepaste = function () {
+    /* this doesn't work for me.
+     * TODO: look into it later :-)
+
+    this._doc.body.onbeforepaste = function() {
         wym._iframe.contentWindow.event.returnValue = false;
     };
 
-    this._doc.body.onpaste = function () {
+    this._doc.body.onpaste = function() {
         wym._iframe.contentWindow.event.returnValue = false;
         wym.paste(window.clipboardData.getData("Text"));
     };
+    */
 
     if (jQuery.isFunction(this._options.preBind)) {
         this._options.preBind(this);
@@ -66,6 +70,12 @@ WYMeditor.WymClassTrident.prototype.initIframe = function (iframe) {
     wym.iframeInitialized = true;
 
     wym.postIframeInit();
+
+    try {
+        // (bermi's note) noticed when running unit tests on IE6
+        // Is this really needed, it trigger an unexisting property on IE6
+        this._doc = iframe.contentWindow.document;
+    } catch (e) {}
 };
 
 (function (editorInitSkin) {
@@ -87,6 +97,15 @@ WYMeditor.WymClassTrident.prototype._exec = function (cmd, param) {
         this._doc.execCommand(cmd, false, param);
     } else {
         this._doc.execCommand(cmd);
+    }
+};
+
+WYMeditor.WymClassTrident.prototype.selected = function () {
+    var caretPos = this._iframe.contentWindow.document.caretPos;
+    if (caretPos) {
+        if (caretPos.parentElement) {
+            return caretPos.parentElement();
+        }
     }
 };
 
@@ -200,7 +219,7 @@ WYMeditor.WymClassTrident.prototype.keyup = function (evt) {
 
         container = wym.selectedContainer();
         selectedNode = wym.selection().focusNode;
-        if (container !== null) {
+        if (container && container.tagName) {
             name = container.tagName.toLowerCase();
         }
         if (container.parentNode) {
@@ -225,6 +244,14 @@ WYMeditor.WymClassTrident.prototype.keyup = function (evt) {
             wym.wrapWithContainer(selectedNode, defaultRootContainer);
             wym.fixBodyHtml();
         }
+    }
+
+    // If we potentially created a new block level element or moved to a
+    // new one then we should ensure that they're in the proper format
+    if (evt.keyCode === WYMeditor.KEY.UP ||
+            evt.keyCode === WYMeditor.KEY.DOWN ||
+            evt.keyCode === WYMeditor.KEY.BACKSPACE ||
+            evt.keyCode === WYMeditor.KEY.ENTER) {
 
         if (jQuery.inArray(name, notValidRootContainers) > -1 &&
                 parentName === WYMeditor.BODY) {
@@ -233,6 +260,7 @@ WYMeditor.WymClassTrident.prototype.keyup = function (evt) {
         }
     }
 
+<<<<<<< HEAD:src/wymeditor/editor/trident.js
     // If we potentially created a new block level element or moved to a new
     // one, then we should ensure the container is valid and the formatting is
     // proper.
@@ -263,4 +291,63 @@ WYMeditor.WymClassTrident.prototype.keyup = function (evt) {
         // Fix formatting if necessary
         wym.fixBodyHtml();
     }
+=======
+    jQuery(wym._element)
+      .trigger(
+          WYMeditor.EVENTS.documentHTMLUpdated,
+          [wym, jQuery(wym._doc.body).html()]
+      );
+};
+
+WYMeditor.WymClassTrident.prototype.setFocusToNode = function (node, toStart) {
+    var range = this._doc.selection.createRange();
+    toStart = toStart ? true : false;
+
+    range.moveToElementText(node);
+    range.collapse(toStart);
+    range.select();
+    node.focus();
+};
+
+/* @name paste
+ * @description         Paste text into the editor below the carret,
+ *                      used for "Paste from Word".
+ * @param String str    String to insert, two or more newlines separates
+ *                      paragraphs. May contain inline HTML.
+ */
+WYMeditor.WymClassTrident.prototype.paste = function (str) {
+    var container = this.selected(),
+        html = '',
+        paragraphs,
+        focusNode,
+        i,
+        l;
+
+    // Insert where appropriate
+    if (container && container.tagName.toLowerCase() !== WYMeditor.BODY) {
+        // No .last() pre jQuery 1.4
+        //focusNode = jQuery(html).insertAfter(container).last()[0];
+        paragraphs = jQuery(container).append(str);
+        focusNode = paragraphs[paragraphs.length - 1];
+    } else {
+        // Split string into paragraphs by two or more newlines
+        paragraphs = str.split(new RegExp(this._newLine + '{2,}', 'g'));
+
+        // Build html
+        for (i = 0, l = paragraphs.length; i < l; i++) {
+            html += '<p>' +
+                (paragraphs[i].split(this._newLine).join('<br />')) +
+                '</p>';
+        }
+
+        paragraphs = jQuery(html, this._doc).appendTo(this._doc.body);
+        focusNode = paragraphs[paragraphs.length - 1];
+    }
+
+    // And remove br (if editor was empty)
+    jQuery('body > br', this._doc).remove();
+
+    // Restore focus
+    this.setFocusToNode(focusNode);
+>>>>>>> master:src/wymeditor/editor/ie.js
 };

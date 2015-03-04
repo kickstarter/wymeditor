@@ -158,6 +158,7 @@ jQuery.extend(WYMeditor, {
     CONTAINER_CLASS     : "{Wym_Container_Class}",
     CONTAINER_NAME      : "{Wym_Container_Name}",
     CONTAINER_TITLE     : "{Wym_Containers_Title}",
+    CUSTOM_COMMANDS     : [],
     CREATE_LINK         : "CreateLink",
     DIALOG_BODY         : "{Wym_Dialog_Body}",
     DIALOG_IMAGE        : "Image",
@@ -480,6 +481,7 @@ jQuery.extend(WYMeditor, {
     ],
 
     EVENTS : {
+        'documentHTMLUpdated': 'wym-documentHTMLUpdated',
         'postBlockMaybeCreated': 'wym-postBlockMaybeCreated',
         'postIframeInitialization': 'wym-postIframeInitialization'
     },
@@ -1330,7 +1332,7 @@ WYMeditor.Helper = {
 
     //trim 'str' string
     trim: function (str) {
-        return str.replace(/^(\s*)|(\s*)$/gm, '');
+        return jQuery.trim(str);
     },
 
     //return true if 'arr' array contains 'elem', or false
